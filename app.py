@@ -18,6 +18,7 @@ import json
 from langchain.schema import SystemMessage
 from fastapi import FastAPI
 import streamlit as st
+import json
 import logging
 
 
@@ -251,5 +252,8 @@ def researchAgent(query: Query):
     query = query.query
     content = agent({"input": query})
     actual_content = content['output']
-    logging.info('researchAgent: %s', actual_content)
-    return actual_content
+
+    # Step 2: Parse the string into a Python dictionary
+    parsed_dict = json.loads(actual_content.replace('\n', '').replace('\\', ''))
+
+    return json.dumps(parsed_dict, indent=4)
