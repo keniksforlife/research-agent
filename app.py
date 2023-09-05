@@ -177,28 +177,9 @@ system_message = SystemMessage(
             5/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
             6/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
             7/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
-
-            For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
-
-            {
-            "research_summary": "Summary of the research...",
-            "items": [
-                {
-                "name": "Product Name",
-                "description": "Product Description",
-                "source": "URL Source"
-                },
-                // ... more items
-            ],
-            "sources": [
-                {
-                "title": "Source Title",
-                "link": "Source Link"
-                },
-                // ... more sources
-            ]
-            }
-            """
+            8/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
+            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source"}],"sources":[{"title":"Source Title","link":"Source Link"}]}
+            10/ Please make sure the JSON is well-formatted and valid. """
 )
 
 agent_kwargs = {
@@ -254,6 +235,29 @@ def researchAgent(query: Query):
     actual_content = content['output']
 
     # Step 2: Parse the string into a Python dictionary
-    parsed_dict = json.loads(actual_content.replace('\n', '').replace('\\', ''))
+    # parsed_dict = json.loads(actual_content.replace('\n', '').replace('\\', ''))
 
-    return json.dumps(parsed_dict, indent=4)
+    return remove_duplicate_json(actual_content)
+
+
+def remove_duplicate_json(json_str):
+    # Split the string by the delimiter '}{'
+    json_list = json_str.split("}\n{")
+    
+    # Create an empty set to store unique JSON objects
+    unique_json_set = set()
+    
+    # Iterate through the list and add each unique JSON object to the set
+    for json_obj in json_list:
+        # Add curly braces back to each JSON object
+        if not json_obj.startswith("{"):
+            json_obj = "{" + json_obj
+        if not json_obj.endswith("}"):
+            json_obj = json_obj + "}"
+        
+        unique_json_set.add(json_obj)
+    
+    # Join the unique JSON objects back into a single string
+    unique_json_str = "}\n{".join(unique_json_set)
+    
+    return unique_json_str
