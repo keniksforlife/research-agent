@@ -1094,3 +1094,283 @@ Cookie Settings
 
 
 We use cookies!This website uses essential cookies to ensure its proper operation, analytic cookies to understand how you interact with it and marketing cookies from selected third-party vendors.Accept allSettingsCookie preferencesCookie usageWe use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want. For more details relative to cookies and other sensitive data, please read the full privacy policy.Strictly necessary cookiesStrictly necessary cookiesThese cookies are essential for the proper functioning of this website. Without these cookies, the website would not work properlyNameDomainExpirationDescriptionVertcalize.Sessionfanfinders.com30 daysThis cookie holds site session information such as the site theme and layout. It does not hold any personal informationARRAffinitymicrosoft.comWhen browsing session endsThis cookie is set by websites run on the Windows Azure cloud platform. It is used for load balancing to make sure the visitor page requests are routed to the same server in any browsing session.Performance and Analytics cookiesPerformance and Analytics cookiesThese cookies allow the website to collect metrics that help improve performance of this site. They help us know which pages are the most and least popular and see how visitors move around the site. All information these cookies collect is aggregated and therefore anonymousNameDomainExpirationDescription^_gagoogle.com2 yearsWe use Google Analytics to understand the behaviour of visitors who interact with our site and content. Google provides us with a dedicated service (that is, they do not use this information for their own purposes) and it is used on an aggregated basis (that is, no individuals can be identified from the data)._gidgoogle.com1 dayGoogle Analytics.pasolarwinds.com30 daysWe use Pingdom (SolarWinds) to understand the behaviour of visitors who interact with our site and content. This data is used on an aggregated basis and no individuals can be identified from the dataai_sessionmicrosoft.comWhen browsing session endsThis cookie name is associated with the Microsoft Application Insights software, which collects statistical usage and telemetry information for apps built on the Azure cloud platform. This is a unique anonymous session identifier cookie. The main purpose of this cookie is: Performance.ai_usermicrosoft.com1 yearThis cookie name is associated with the Microsoft Application Insights software, which collects statistical usage and telemetry information for apps built on the Azure cloud platform. This is a unique user identifier cookie enabling counting of the number of users accessing the application over time. The main purpose of this cookie is: PerformanceMarketing cookiesMarketing cookiesThese cookies may be set via this website by our selected advertising partners, They can be used by our partners to build a profile of your interests based on the browsing information they collect from you.NameDomainExpirationDescription^_uetmicrosoft.com1 yearThis is a cookie utilised by Microsoft Bing Ads and is a tracking cookie. It allows us to engage with a user that has previously visited our website. This is a Microsoft cookie^_fbfacebook.com3 monthsThis is a cookie utilised by Facebook to deliver advertising. The cookie contains an encrypted Facebook user ID and browser ID. It will receive information from this website to better target and optimise advertising.More informationFor any queries in relation to our policy on cookies and your choices, please contact us.Accept allReject allSave settings
+2023-09-06 03:11:53,667 - INFO - SEARCH: {"searchParameters":{"q":"best baby car seats 2023","type":"search","engine":"google"},"organic":[{"title":"7 Best Infant Car Seats of 2023 - Baby Gear Essentials","link":"https://babygearessentials.com/best-infant-car-seats/","snippet":"1. Chicco KeyFit 30: Best Overall Infant Car Seat · 2. Peg Perego Primo Viaggio: Best European Belt Path · 3. UPPAbaby MESA V2: Best Premium Car Seat · 4. Graco ...","sitelinks":[{"title":"Chicco KeyFit 30","link":"https://babygearessentials.com/chicco-keyfit-30/"},{"title":"UPPAbaby MESA Review","link":"https://babygearessentials.com/uppababy-mesa/"},{"title":"Maxi-Cosi Mico Max 30 Review","link":"https://babygearessentials.com/maxi-cosi-mico-max-30/"}],"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrntF5CwoEwMjJ7-AdvyryKky5O3yQ113q16G9ZWFxX24_xLyLXCHdd6g&s","position":1},{"title":"The 4 Best Infant Car Seats of 2023 | Reviews by Wirecutter - The New York Times","link":"https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/","snippet":"After extensive research and field testing, we found that the Graco SnugRide SnugFit 35 DLX is the best infant car seat for most families.","date":"Jan 20, 2023","currency":"$","price":203,"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJxCkeTJpDnxAAwt8knTk-_55n8h-Ir-09bpgzroH5bNIKojauTf2Tn0g&s","position":2},{"title":"5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com","link":"https://www.motor1.com/products-services/auto-products/best-infant-car-seat/","snippet":"Shop the best infant car seats of 2023 with our buyers guide to keeping your infant safe in the car. #1 Editor's Pick: Bugaboo Turtle Air.","date":"Jul 5, 2023","currency":"$","price":140,"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS70rAhwiYReAQbMVtJ6xqBkZTJQqbYvegFnfJriJInqRxCF_Zu1IUZ58Q&s","position":3},{"title":"Best Infant Car Seats, According to Child Passenger Safety Technicians - What to Expect","link":"https://www.whattoexpect.com/baby-products/car-seats/best-infant-car-seats/","snippet":"The best infant car seat is the Chicco KeyFit 35 Infant Car Seat, according to testers from the What to Expect staff and user community.","date":"Jun 8, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHKMv_7HoXnxnpheWcqU2w9jvr0BDcEU4tDxXiDNe_RXwj9w_xxAcCdvc&s","position":4},{"title":"The 6 Best Infant Car Seats 2023: Crash Tested - BabyGearLab","link":"https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat","snippet":"Best Overall Infant Car Seat. Chicco KeyFit 35. Editors' Choice Award. chicco keyfit 35 infant car seat review.","date":"Mar 20, 2023","position":5},{"title":"The 23 Very Best Car Seats and Booster Seats for Kids - New York Magazine","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html","snippet":"Best infant car seats ; Evenflo LiteMax DLX Infant Car Seat with Load Leg Base. $199 ; Chicco KeyFit 35 Zip ClearTex Infant Car Seat. $300.","date":"Jul 7, 2023","sitelinks":[{"title":"Best for infants","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html#infants"},{"title":"Best convertibles","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html#convertible"},{"title":"Best all-in-ones","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html#all-in-one"}],"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3-10Gh8VobOajWO1lakZVOZMSJm30fiIyX0em37RVCeF1po451UniSJI&s","position":6},{"title":"The 10 Best Car Seats 2023: Crash Tested - BabyGearLab","link":"https://www.babygearlab.com/topics/vehicle-safety/best-car-seats","snippet":"The Graco Extend2Fit earned the best score in our analysis of crash test results. The Graco had one of the best-combined head and chest sensor ...","date":"Mar 20, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCmB5szxVxOb-3j5b9C3urZKNV-NnZR8QigqQMxabF6-qHhr5vWe9XSDk&s","position":7},{"title":"9 Best Car Seats of 2023, Tested by Experts - Good Housekeeping","link":"https://www.goodhousekeeping.com/travel-products/car-seat-reviews/g23363834/best-car-seats/","snippet":"The Best Car Seats for Kids of Every Age · Our top picks: · Chicco KeyFit 35 Zip ClearTex · Chicco KeyFit 35 Zip ClearTex · Britax One4Life ClickTight All-in-One.","position":8},{"title":"7 Best Car Seats: Safety first for infants of 2023 - Reviewed","link":"https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats","snippet":"The Best Car Seats of 2023 · Why trust Reviewed? · Uppababy Mesa V2 · Chicco KeyFit 35 · Doona Car Seat & Stroller · Clek Liing · Nuna Pipa · Other Car ...","date":"Jul 25, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5XuAhhGKLfgOdGjlfvPbQOBhV0SqSoAkLTWZ8049xlf-EL3VIu79cV8M&s","position":9},{"title":"11 Best Car Seats of 2023 - Milk Drunk","link":"https://milk-drunk.com/11-best-car-seats/","snippet":"1. Best car seat for all stages: Maxi-Cosi Pria All-in-1 Convertible Car Seat ... Not even your kiddo's favorite Lovey will hold up as well as ...","date":"Aug 17, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaedExMfARp9FX13abQqZPy2P8o8NOy5WFENvm7DPjdCeEFjWOnMeyRN0&s","position":10}],"peopleAlsoAsk":[{"question":"What is the safest baby seat in 2023?","snippet":"There are no bad options in our top infant car seats and they all meet the\nsafety regulations to protect your baby in the car. The Chicco KeyFit 30 is\noverall the best infant car seat of 2023 because of its excellent safety score,\neasiness to install and value for money.","title":"7 Best Infant Car Seats of 2023 - Baby Gear Essentials","link":"https://babygearessentials.com/best-infant-car-seats/"},{"question":"What car seats are being recalled in 2023?","snippet":"Recalled models include certain Safety 1st onBoard 35 Secure Tech, Safety 1st\nSecure Tech Infant Base, Maxi-Cosi Coral XP, Maxi-Cosi Mico XP Max, Maxi-Cosi\nMico XP, Maxi-Cosi Mico Luxe+, and Maxi-Cosi Infant Base child seats. The seats\nwere manufactured from May 2020 to February 2023, according to the recall.","title":"Car seat recall: Over 59K Maxi-Cosi, Safety 1st models recalled - KING 5","link":"https://www.king5.com/article/news/nation-world/car-seats-recall-safety-1st-maxi-cosi/507-34af3d03-51b7-4336-96fc-eed4af8b9862"},{"question":"What is the #1 rated car seat?","snippet":"Car seat\nBest for\nType\nGraco 4Ever DLX\nBest overall\n4-in-1\nChicco Keyfit 30\nBest for budgets\nInfant\nBritax Boulevard Clicktight with ARB\nExtended rear-facing pick\nConvertible\nEvenflo All4One DLX\nBest convertible car seat\n4-in-1","title":"Best Car Seats of 2023 - SafeWise","link":"https://www.safewise.com/resources/carseat-buyers-guide/"},{"question":"What is the number 1 infant car seat?","snippet":"Award\nMake/Model\nMaximum Weight Capacity\nEditor's Pick\nBugaboo Turtle Air\n32.0 pounds\nEasiest to Use\nUPPAbaby Mesa\n35.0 pounds\nMost Comfortable\nGraco SnugRide SnugLock 35\n35.0 pounds\nMost Adjustable\nChicco KeyFit 30\n30.0 pounds","title":"5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com","link":"https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"}],"relatedSearches":[{"query":"Best toddler car seat"},{"query":"Nuna car seat"},{"query":"Best car seat"},{"query":"Graco Infant Car Seat"},{"query":"Infant car seat and stroller"},{"query":"Chicco Infant Car Seat"},{"query":"Newborn car seat position"},{"query":"Maxi-Cosi Infant car seat"}]}
+2023-09-06 03:12:54,644 - INFO - researchAgent: Based on my research, here are some of the best baby car seats for 2023:
+
+1. Chicco KeyFit 30: This car seat is considered the best overall infant car seat for 2023. It has excellent safety scores, is easy to install, and offers good value for money. [Source](https://babygearessentials.com/chicco-keyfit-30/)
+
+2. Graco SnugRide SnugFit 35 DLX: After extensive research and field testing, this car seat has been found to be the best infant car seat for most families. It offers great safety features and is highly recommended. [Source](https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/)
+
+3. UPPAbaby MESA V2: This premium car seat is known for its safety features and ease of use. It offers advanced side-impact protection and is compatible with UPPAbaby strollers. [Source](https://babygearessentials.com/uppababy-mesa/)
+
+4. Peg Perego Primo Viaggio: This car seat is known for its European belt path design, which provides added safety. It offers excellent protection and is easy to install. [Source](https://babygearessentials.com/best-infant-car-seats/)
+
+5. Maxi-Cosi Mico Max 30: This car seat is highly rated for its safety features and comfort. It has a lightweight design and is compatible with Maxi-Cosi strollers. [Source](https://babygearessentials.com/maxi-cosi-mico-max-30/)
+
+Please note that the rankings and recommendations may vary depending on different sources and individual preferences. It is important to thoroughly research and consider your specific needs before purchasing a baby car seat.
+
+For more information and detailed reviews, you can refer to the provided sources and links.
+
+{
+  "sources": [
+    {
+      "title": "7 Best Infant Car Seats of 2023 - Baby Gear Essentials",
+      "link": "https://babygearessentials.com/best-infant-car-seats/"
+    },
+    {
+      "title": "The 4 Best Infant Car Seats of 2023 | Reviews by Wirecutter - The New York Times",
+      "link": "https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/"
+    },
+    {
+      "title": "5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com",
+      "link": "https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"
+    },
+    {
+      "title": "Best Infant Car Seats, According to Child Passenger Safety Technicians - What to Expect",
+      "link": "https://www.whattoexpect.com/baby-products/car-seats/best-infant-car-seats/"
+    },
+    {
+      "title": "The 6 Best Infant Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat"
+    },
+    {
+      "title": "The 23 Very Best Car Seats and Booster Seats for Kids - New York Magazine",
+      "link": "https://nymag.com/strategist/article/best-car-seats-for-kids.html"
+    },
+    {
+      "title": "The 10 Best Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-car-seats"
+    },
+    {
+      "title": "9 Best Car Seats of 2023, Tested by Experts - Good Housekeeping",
+      "link": "https://www.goodhousekeeping.com/travel-products/car-seat-reviews/g23363834/best-car-seats/"
+    },
+    {
+      "title": "7 Best Car Seats: Safety first for infants of 2023 - Reviewed",
+      "link": "https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats"
+    },
+    {
+      "title": "11 Best Car Seats of 2023 - Milk Drunk",
+      "link": "https://milk-drunk.com/11-best-car-seats/"
+    }
+  ]
+}
+Based on my research, here are some of the best baby car seats for 2023:
+
+1. Chicco KeyFit 30: This car seat is considered the best overall infant car seat for 2023. It has excellent safety scores, is easy to install, and offers good value for money. [Source](https://babygearessentials.com/chicco-keyfit-30/)
+
+2. Graco SnugRide SnugFit 35 DLX: After extensive research and field testing, this car seat has been found to be the best infant car seat for most families. It offers great safety features and is highly recommended. [Source](https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/)
+
+3. UPPAbaby MESA V2: This premium car seat is known for its safety features and ease of use. It offers advanced side-impact protection and is compatible with UPPAbaby strollers. [Source](https://babygearessentials.com/uppababy-mesa/)
+
+4. Peg Perego Primo Viaggio: This car seat is known for its European belt path design, which provides added safety. It offers excellent protection and is easy to install. [Source](https://babygearessentials.com/best-infant-car-seats/)
+
+5. Maxi-Cosi Mico Max 30: This car seat is highly rated for its safety features and comfort. It has a lightweight design and is compatible with Maxi-Cosi strollers. [Source](https://babygearessentials.com/maxi-cosi-mico-max-30/)
+
+Please note that the rankings and recommendations may vary depending on different sources and individual preferences. It is important to thoroughly research and consider your specific needs before purchasing a baby car seat.
+
+For more information and detailed reviews, you can refer to the provided sources and links.
+
+{
+  "sources": [
+    {
+      "title": "7 Best Infant Car Seats of 2023 - Baby Gear Essentials",
+      "link": "https://babygearessentials.com/best-infant-car-seats/"
+    },
+    {
+      "title": "The 4 Best Infant Car Seats of 2023 | Reviews by Wirecutter - The New York Times",
+      "link": "https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/"
+    },
+    {
+      "title": "5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com",
+      "link": "https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"
+    },
+    {
+      "title": "Best Infant Car Seats, According to Child Passenger Safety Technicians - What to Expect",
+      "link": "https://www.whattoexpect.com/baby-products/car-seats/best-infant-car-seats/"
+    },
+    {
+      "title": "The 6 Best Infant Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat"
+    },
+    {
+      "title": "The 23 Very Best Car Seats and Booster Seats for Kids - New York Magazine",
+      "link": "https://nymag.com/strategist/article/best-car-seats-for-kids.html"
+    },
+    {
+      "title": "The 10 Best Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-car-seats"
+    },
+    {
+      "title": "9 Best Car Seats of 2023, Tested by Experts - Good Housekeeping",
+      "link": "https://www.goodhousekeeping.com/travel-products/car-seat-reviews/g23363834/best-car-seats/"
+    },
+    {
+      "title": "7 Best Car Seats: Safety first for infants of 2023 - Reviewed",
+      "link": "https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats"
+    },
+    {
+      "title": "11 Best Car Seats of 2023 - Milk Drunk",
+      "link": "https://milk-drunk.com/11-best-car-seats/"
+    }
+  ]
+}
+2023-09-06 03:22:45,510 - INFO - SEARCH: {"searchParameters":{"q":"best baby car seats 2023","type":"search","engine":"google"},"organic":[{"title":"7 Best Infant Car Seats of 2023 - Baby Gear Essentials","link":"https://babygearessentials.com/best-infant-car-seats/","snippet":"1. Chicco KeyFit 30: Best Overall Infant Car Seat · 2. Peg Perego Primo Viaggio: Best European Belt Path · 3. UPPAbaby MESA V2: Best Premium Car Seat · 4. Graco ...","sitelinks":[{"title":"Chicco KeyFit 30","link":"https://babygearessentials.com/chicco-keyfit-30/"},{"title":"UPPAbaby MESA Review","link":"https://babygearessentials.com/uppababy-mesa/"},{"title":"Maxi-Cosi Mico Max 30 Review","link":"https://babygearessentials.com/maxi-cosi-mico-max-30/"}],"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrntF5CwoEwMjJ7-AdvyryKky5O3yQ113q16G9ZWFxX24_xLyLXCHdd6g&s","position":1},{"title":"The 4 Best Infant Car Seats of 2023 | Reviews by Wirecutter - The New York Times","link":"https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/","snippet":"After extensive research and field testing, we found that the Graco SnugRide SnugFit 35 DLX is the best infant car seat for most families.","date":"Jan 20, 2023","currency":"$","price":203,"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJxCkeTJpDnxAAwt8knTk-_55n8h-Ir-09bpgzroH5bNIKojauTf2Tn0g&s","position":2},{"title":"5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com","link":"https://www.motor1.com/products-services/auto-products/best-infant-car-seat/","snippet":"Shop the best infant car seats of 2023 with our buyers guide to keeping your infant safe in the car. #1 Editor's Pick: Bugaboo Turtle Air.","date":"Jul 5, 2023","currency":"$","price":140,"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS70rAhwiYReAQbMVtJ6xqBkZTJQqbYvegFnfJriJInqRxCF_Zu1IUZ58Q&s","position":3},{"title":"The 6 Best Infant Car Seats 2023: Crash Tested - BabyGearLab","link":"https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat","snippet":"Best Overall Infant Car Seat. Chicco KeyFit 35. Editors' Choice Award. chicco keyfit 35 infant car seat review.","date":"Mar 20, 2023","position":4},{"title":"The 10 Best Car Seats 2023: Crash Tested - BabyGearLab","link":"https://www.babygearlab.com/topics/vehicle-safety/best-car-seats","snippet":"The Graco Extend2Fit earned the best score in our analysis of crash test results. The Graco had one of the best-combined head and chest sensor ...","date":"Mar 20, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCmB5szxVxOb-3j5b9C3urZKNV-NnZR8QigqQMxabF6-qHhr5vWe9XSDk&s","position":5},{"title":"Best Infant Car Seats, According to Child Passenger Safety Technicians - What to Expect","link":"https://www.whattoexpect.com/baby-products/car-seats/best-infant-car-seats/","snippet":"The best infant car seat is the Chicco KeyFit 35 Infant Car Seat, according to testers from the What to Expect staff and user community.","date":"Jun 8, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHKMv_7HoXnxnpheWcqU2w9jvr0BDcEU4tDxXiDNe_RXwj9w_xxAcCdvc&s","position":6},{"title":"The 4 Best Travel Car Seats of 2023 | Reviews by Wirecutter - The New York Times","link":"https://www.nytimes.com/wirecutter/reviews/best-travel-car-seats/","snippet":"The Chicco KeyFit 35, one of our picks for the best infant car seats, is an excellent choice for both travel and everyday use.","date":"Aug 18, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ_wOXH4oHb3xLH1fESB-nZyIaQ56RHV0nhQy9Aw-zPzSJi4zRa26_xGMo&s","position":7},{"title":"The 23 Very Best Car Seats and Booster Seats for Kids - New York Magazine","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html","snippet":"Best infant car seats ; Evenflo LiteMax DLX Infant Car Seat with Load Leg Base. $199 ; Chicco KeyFit 35 Zip ClearTex Infant Car Seat. $300.","date":"Jul 7, 2023","sitelinks":[{"title":"Best for infants","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html#infants"},{"title":"Best convertibles","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html#convertible"},{"title":"Best all-in-ones","link":"https://nymag.com/strategist/article/best-car-seats-for-kids.html#all-in-one"}],"imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3-10Gh8VobOajWO1lakZVOZMSJm30fiIyX0em37RVCeF1po451UniSJI&s","position":8},{"title":"7 Best Car Seats: Safety first for infants of 2023 - Reviewed","link":"https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats","snippet":"The Best Car Seats of 2023 · Why trust Reviewed? · Uppababy Mesa V2 · Chicco KeyFit 35 · Doona Car Seat & Stroller · Clek Liing · Nuna Pipa · Other Car ...","date":"Jul 25, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5XuAhhGKLfgOdGjlfvPbQOBhV0SqSoAkLTWZ8049xlf-EL3VIu79cV8M&s","position":9},{"title":"11 Best Car Seats of 2023 - Milk Drunk","link":"https://milk-drunk.com/11-best-car-seats/","snippet":"1. Best car seat for all stages: Maxi-Cosi Pria All-in-1 Convertible Car Seat ... Not even your kiddo's favorite Lovey will hold up as well as ...","date":"Aug 17, 2023","imageUrl":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaedExMfARp9FX13abQqZPy2P8o8NOy5WFENvm7DPjdCeEFjWOnMeyRN0&s","position":10}],"peopleAlsoAsk":[{"question":"What is the safest baby seat in 2023?","snippet":"There are no bad options in our top infant car seats and they all meet the safety regulations to protect your baby in the car. The Chicco KeyFit 30 is overall the best infant car seat of 2023 because of its excellent safety score, easiness to install and value for money.","title":"7 Best Infant Car Seats of 2023 - Baby Gear Essentials","link":"https://babygearessentials.com/best-infant-car-seats/"},{"question":"What car seats are being recalled in 2023?","snippet":"Recalled models include certain Safety 1st onBoard 35 Secure Tech, Safety 1st Secure Tech Infant Base, Maxi-Cosi Coral XP, Maxi-Cosi Mico XP Max, Maxi-Cosi Mico XP, Maxi-Cosi Mico Luxe+, and Maxi-Cosi Infant Base child seats. The seats were manufactured from May 2020 to February 2023, according to the recall.","title":"Car seat recall: Over 59K Maxi-Cosi, Safety 1st models recalled - KING 5","link":"https://www.king5.com/article/news/nation-world/car-seats-recall-safety-1st-maxi-cosi/507-34af3d03-51b7-4336-96fc-eed4af8b9862"},{"question":"What is the #1 rated car seat?","snippet":"Car seat\nBest for\nType\nGraco 4Ever DLX\nBest overall\n4-in-1\nChicco Keyfit 30\nBest for budgets\nInfant\nBritax Boulevard Clicktight with ARB\nExtended rear-facing pick\nConvertible\nEvenflo All4One DLX\nBest convertible car seat\n4-in-1","title":"Best Car Seats of 2023 - SafeWise","link":"https://www.safewise.com/resources/carseat-buyers-guide/"},{"question":"What is the number 1 infant car seat?","snippet":"Award\nMake/Model\nMaximum Weight Capacity\nEditor's Pick\nBugaboo Turtle Air\n32.0 pounds\nEasiest to Use\nUPPAbaby Mesa\n35.0 pounds\nMost Comfortable\nGraco SnugRide SnugLock 35\n35.0 pounds\nMost Adjustable\nChicco KeyFit 30\n30.0 pounds","title":"5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com","link":"https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"}],"relatedSearches":[{"query":"Best toddler car seat"},{"query":"Best car seat"},{"query":"Nuna car seat"},{"query":"Graco Infant Car Seat"},{"query":"Infant car seat and stroller"},{"query":"Chicco Infant Car Seat"},{"query":"Newborn car seat position"},{"query":"UPPAbaby car seat"}]}
+2023-09-06 03:23:56,755 - INFO - researchAgent: {
+  "research_summary": "Based on the research, here are some of the best baby car seats for 2023:",
+  "items": [
+    {
+      "name": "Chicco KeyFit 30",
+      "description": "Best Overall Infant Car Seat",
+      "source": "https://babygearessentials.com/chicco-keyfit-30/"
+    },
+    {
+      "name": "Graco SnugRide SnugFit 35 DLX",
+      "description": "Best Infant Car Seat for Most Families",
+      "source": "https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/"
+    },
+    {
+      "name": "Bugaboo Turtle Air",
+      "description": "Editor's Pick",
+      "source": "https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"
+    },
+    {
+      "name": "Chicco KeyFit 35",
+      "description": "Best Overall Infant Car Seat",
+      "source": "https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat"
+    },
+    {
+      "name": "Graco Extend2Fit",
+      "description": "Best Car Seat with Crash Test Results",
+      "source": "https://www.babygearlab.com/topics/vehicle-safety/best-car-seats"
+    },
+    {
+      "name": "Evenflo LiteMax DLX Infant Car Seat with Load Leg Base",
+      "description": "Best Infant Car Seat",
+      "source": "https://nymag.com/strategist/article/best-car-seats-for-kids.html#infants"
+    },
+    {
+      "name": "Uppababy Mesa V2",
+      "description": "Best Car Seat",
+      "source": "https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats"
+    },
+    {
+      "name": "Maxi-Cosi Pria All-in-1 Convertible Car Seat",
+      "description": "Best Car Seat for All Stages",
+      "source": "https://milk-drunk.com/11-best-car-seats/"
+    }
+  ],
+  "sources": [
+    {
+      "title": "7 Best Infant Car Seats of 2023 - Baby Gear Essentials",
+      "link": "https://babygearessentials.com/best-infant-car-seats/"
+    },
+    {
+      "title": "The 4 Best Infant Car Seats of 2023 | Reviews by Wirecutter - The New York Times",
+      "link": "https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/"
+    },
+    {
+      "title": "5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com",
+      "link": "https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"
+    },
+    {
+      "title": "The 6 Best Infant Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat"
+    },
+    {
+      "title": "The 10 Best Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-car-seats"
+    },
+    {
+      "title": "The 23 Very Best Car Seats and Booster Seats for Kids - New York Magazine",
+      "link": "https://nymag.com/strategist/article/best-car-seats-for-kids.html"
+    },
+    {
+      "title": "7 Best Car Seats: Safety first for infants of 2023 - Reviewed",
+      "link": "https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats"
+    },
+    {
+      "title": "11 Best Car Seats of 2023 - Milk Drunk",
+      "link": "https://milk-drunk.com/11-best-car-seats/"
+    }
+  ]
+}
+{
+  "research_summary": "Based on the research, here are some of the best baby car seats for 2023:",
+  "items": [
+    {
+      "name": "Chicco KeyFit 30",
+      "description": "Best Overall Infant Car Seat",
+      "source": "https://babygearessentials.com/chicco-keyfit-30/"
+    },
+    {
+      "name": "Graco SnugRide SnugFit 35 DLX",
+      "description": "Best Infant Car Seat for Most Families",
+      "source": "https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/"
+    },
+    {
+      "name": "Bugaboo Turtle Air",
+      "description": "Editor's Pick",
+      "source": "https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"
+    },
+    {
+      "name": "Chicco KeyFit 35",
+      "description": "Best Overall Infant Car Seat",
+      "source": "https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat"
+    },
+    {
+      "name": "Graco Extend2Fit",
+      "description": "Best Car Seat with Crash Test Results",
+      "source": "https://www.babygearlab.com/topics/vehicle-safety/best-car-seats"
+    },
+    {
+      "name": "Evenflo LiteMax DLX Infant Car Seat with Load Leg Base",
+      "description": "Best Infant Car Seat",
+      "source": "https://nymag.com/strategist/article/best-car-seats-for-kids.html#infants"
+    },
+    {
+      "name": "Uppababy Mesa V2",
+      "description": "Best Car Seat",
+      "source": "https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats"
+    },
+    {
+      "name": "Maxi-Cosi Pria All-in-1 Convertible Car Seat",
+      "description": "Best Car Seat for All Stages",
+      "source": "https://milk-drunk.com/11-best-car-seats/"
+    }
+  ],
+  "sources": [
+    {
+      "title": "7 Best Infant Car Seats of 2023 - Baby Gear Essentials",
+      "link": "https://babygearessentials.com/best-infant-car-seats/"
+    },
+    {
+      "title": "The 4 Best Infant Car Seats of 2023 | Reviews by Wirecutter - The New York Times",
+      "link": "https://www.nytimes.com/wirecutter/reviews/best-infant-car-seat/"
+    },
+    {
+      "title": "5 Best Infant Car Seats, Tested By Experts (2023 Guide) - Motor1.com",
+      "link": "https://www.motor1.com/products-services/auto-products/best-infant-car-seat/"
+    },
+    {
+      "title": "The 6 Best Infant Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-infant-car-seat"
+    },
+    {
+      "title": "The 10 Best Car Seats 2023: Crash Tested - BabyGearLab",
+      "link": "https://www.babygearlab.com/topics/vehicle-safety/best-car-seats"
+    },
+    {
+      "title": "The 23 Very Best Car Seats and Booster Seats for Kids - New York Magazine",
+      "link": "https://nymag.com/strategist/article/best-car-seats-for-kids.html"
+    },
+    {
+      "title": "7 Best Car Seats: Safety first for infants of 2023 - Reviewed",
+      "link": "https://reviewed.usatoday.com/parenting/best-right-now/best-car-seats"
+    },
+    {
+      "title": "11 Best Car Seats of 2023 - Milk Drunk",
+      "link": "https://milk-drunk.com/11-best-car-seats/"
+    }
+  ]
+}
