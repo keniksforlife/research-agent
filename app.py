@@ -18,10 +18,16 @@ import json
 from langchain.schema import SystemMessage
 from fastapi import FastAPI
 import streamlit as st
+import logging
+
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
+
+logging.basicConfig(filename='my_log_file.txt',  # Name of the log file
+                    level=logging.INFO,           # Set the logging level
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 1. Tool for search
 
@@ -41,7 +47,7 @@ def search(query):
     response = requests.request("POST", url, headers=headers, data=payload)
 
     print(response.text)
-
+    logging.info('SEARCH: %s', response.text)
     return response.text
 # search("Most popular prams for newborns")
 
@@ -79,8 +85,10 @@ def scrape_website(objective: str, url: str):
 
             if len(text) > 10000:
                 output = summary(objective, text)
+                logging.info('SCRAPE WEBSITE SUMMARY: %s', output)
                 return output
             else:
+                logging.info('SCRAPE WEBSITE text: %s', text)
                 return text
         else:
             print(f"HTTP request failed with status code {response.status_code}")
@@ -129,6 +137,7 @@ class ScrapeWebsiteTool(BaseTool):
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
     def _run(self, objective: str, url: str):
+        logging.info('ScrapeWebsiteTool-BaseTool: %s', scrape_website(objective, url))
         return scrape_website(objective, url)
 
     def _arun(self, url: str):
@@ -178,22 +187,22 @@ agent = initialize_agent(
 
 
 # 4. Use streamlit to create a web app
-# def main():
-#     st.set_page_config(page_title="AI research agent", page_icon=":bird:")
+def main():
+    st.set_page_config(page_title="AI research agent", page_icon=":bird:")
 
-#     st.header("AI research agent :bird:")
-#     query = st.text_input("Research goal")
+    st.header("AI research agent :bird:")
+    query = st.text_input("Research goal")
 
-#     if query:
-#         st.write("Doing research for ", query)
+    if query:
+        st.write("Doing research for ", query)
 
-#         result = agent({"input": query})
+        result = agent({"input": query})
 
-#         st.info(result['output'])
+        st.info(result['output'])
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
 
 
 # 5. Set this as an API endpoint via FastAPI
@@ -209,4 +218,5 @@ def researchAgent(query: Query):
     query = query.query
     content = agent({"input": query})
     actual_content = content['output']
+    logging.info('researchAgent: %s', actual_content)
     return actual_content
