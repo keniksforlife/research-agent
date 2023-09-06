@@ -53,7 +53,6 @@ def search(query):
     return response.text
 # search("Most popular prams for newborns")
 
-
 # 2. Tool for scraping
 def scrape_website(objective: str, url: str):
     # scrape website, and also will summarize the content based on objective if the content is too large
@@ -86,7 +85,7 @@ def scrape_website(objective: str, url: str):
             print("CONTENTTTTTT:", text)
 
             if len(text) > 10000:
-                output = summary(objective, text)
+                output = detailed_summary(objective, text)
                 logging.info('SCRAPE WEBSITE SUMMARY: %s', output)
                 return output
             else:
@@ -99,6 +98,7 @@ def scrape_website(objective: str, url: str):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
 def summary(objective, content):
     llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
@@ -106,7 +106,7 @@ def summary(objective, content):
         separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
     docs = text_splitter.create_documents([content])
     map_prompt = """
-    Write a summary of the following text for {objective}:
+    Write a summary in JSON Format of the following text for {objective}:
     "{text}"
     SUMMARY:
     """
@@ -125,6 +125,42 @@ def summary(objective, content):
 
     return output
 
+def detailed_summary(objective, content):
+    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+    docs = text_splitter.create_documents([content])
+    
+    # Define multiple prompts
+    prompts = {
+        "summary": "Write a summary for {objective}: {text}",
+        "what_we_like": "List what we like about {objective}: {text}",
+        "best_for": "Describe who this product is best for {objective}: {text}",
+        "price": "If available, provide the specific price of the product for {objective}: {text}",
+        "dimensions": "Provide dimensions such as length, width, height, etc., if available for {objective}: {text}",
+        "Weight": " Mention the weight of the product if it's available for{objective}: {text}",
+        "Product Image": "If there is a product image, please return the image url for {objective}: {text}",
+    }
+    
+    output = {}
+    
+    for info_type, prompt_template in prompts.items():
+        map_prompt_template = PromptTemplate(
+            template=prompt_template, input_variables=["text", "objective"])
+        
+        info_chain = load_summarize_chain(
+            llm=llm,
+            chain_type='map_reduce',
+            map_prompt=map_prompt_template,
+            combine_prompt=map_prompt_template,
+            verbose=True
+        )
+        
+        output[info_type] = info_chain.run(input_documents=docs, objective=objective)
+        
+    return json.dumps(output)  # Convert the output dictionary to JSON
+
+# scrape_website("Chicco KeyFit 30","https://babygearessentials.com/chicco-keyfit-30/")
 
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
@@ -167,7 +203,7 @@ system_message = SystemMessage(
     #         4/ You should not make things up, you should only write facts & data that you have gathered
     #         5/ In the final output, You should include all reference data & links to back up your research in json format; You should include all reference data & links to back up your research in json format
     #         6/ In the final output, You should include all reference data & links to back up your research in json format; You should include all reference data & links to back up your researc in json format"""
-    content="""You are a world-class researcher, who can do detailed research on any topic and produce facts-based results; you do not make things up, you will try as hard as possible to gather facts & data to back up the research.
+    content="""You are a world-class researcher, who can do detailed research on any topic and produce facts-based results; you do not make things up, you will try as hard as possible to gather facts & data to back up the research. You should research for top 10 best/most popular products base on the objective
 
             Please complete the following research objective while adhering to these rules:
             1/ You should do enough research to gather as much information as possible about the objective.
@@ -178,8 +214,8 @@ system_message = SystemMessage(
             6/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
             7/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
             8/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
-            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source"}],"sources":[{"title":"Source Title","link":"Source Link"}]}
-            10/ Please make sure the JSON is well-formatted and valid. """
+            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","dimension":"Provide dimensions such as length, width, height","weight":"weight","image":"image url"}],"sources":[{"title":"Source Title","link":"Source Link"}]}
+            10/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
 )
 
 agent_kwargs = {
