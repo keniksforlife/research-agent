@@ -198,12 +198,12 @@ system_message = SystemMessage(
             Please complete the following research objective while adhering to these rules:
             1/ You should do enough research to gather as much information as possible about the objective.
             2/ If there are URLs of relevant links & articles, please include them.
-            3/ After gathering data, think, "Is there anything new I should search for based on the data I collected to increase research quality?" If the answer is yes, continue; But don't do this more than 3 iterations.
+            3/ After gathering data, think, "Is there anything new I should search for based on the data I collected to increase research quality?" If the answer is yes, continue; But don't do this more than 2 iterations.
             4/ You should not make things up; you should only write facts & data that you have gathered.
             5/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
             6/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
             7/ {"research_summary":"Summary of the researçch...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","dimension":"Provide dimensions such as length,"image":"image url"],"sources":[{"title":"Source Title","link":"Source Link"}]}
-            8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
+            8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
 )
 
 agent_kwargs = {
@@ -267,7 +267,7 @@ def researchAgent(query: Query):
 
 def remove_duplicate_json(json_str):
 
-    json_str = json_str.replace('}}\n{{', '}\n{"')
+    json_str = json_str.replace(r'}}\n{{', r'}},\n{')
 
     # Split the string by the delimiter '}{'
     json_list = json_str.split("}\n{")
