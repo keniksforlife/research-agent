@@ -201,13 +201,9 @@ system_message = SystemMessage(
             3/ After gathering data, think, "Is there anything new I should search for based on the data I collected to increase research quality?" If the answer is yes, continue; But don't do this more than 3 iterations.
             4/ You should not make things up; you should only write facts & data that you have gathered.
             5/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
-            6/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
-            7/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
-            8/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
-            8/ {"research_summary":"Summary of the researçch...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","dimension":"Provide dimensions such as length, width, height","weight":"weight","image":"image url","buy_link":"Extract and provide the direct link where this product can be purchased"}],"sources":[{"title":"Source Title","link":"Source Link"}]}
-            10/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate.
-            11/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate.
-            12/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
+            6/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
+            7/ {"research_summary":"Summary of the researçch...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","dimension":"Provide dimensions such as length,"image":"image url"],"sources":[{"title":"Source Title","link":"Source Link"}]}
+            8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
 )
 
 agent_kwargs = {
