@@ -19,6 +19,8 @@ from langchain.schema import SystemMessage
 from fastapi import FastAPI
 import streamlit as st
 from openai.error import InvalidRequestError
+import json
+import uuid
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
@@ -148,7 +150,7 @@ tools = [
 system_message = SystemMessage(
     content="""You are a world class researcher, who can do detailed research on any topic and produce facts based results; 
             you do not make things up, you will try as hard as possible to gather facts & data to back up the research;
-            You should research for the top best/most popular products base on the objective
+            You should research for the top 10 best/most popular products base on the objective
             
             Please make sure you complete the objective above with the following rules:
             1/ You should do enough research to gather as much information as possible about the objective
@@ -158,7 +160,7 @@ system_message = SystemMessage(
             5/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
             6/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
             7/ The JSON should look something like this:
-            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source"}]}"""
+            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"}]}"""
 )
 
 agent_kwargs = {
@@ -207,11 +209,19 @@ class Query(BaseModel):
     query: str
 
 
-@app.post("/")
+@app.post("/v2")
 def researchAgent(query: Query):
     query = query.query
     content = agent({"input": query})
     actual_content = content['output']
+    return remove_duplicate_json(actual_content)
+
+@app.post("/")
+def researchAgentV2(query: Query):
+    query = query.query
+    content = agent({"input": query})
+    actual_content = content['output']
+    save_to_airtable(remove_duplicate_json(actual_content),query)
     return remove_duplicate_json(actual_content)
 
 
@@ -224,3 +234,61 @@ def remove_duplicate_json(json_str):
     
     return json_str
 
+
+def save_to_airtable(json_str,category):
+    API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
+    API_KEY = "patCKWLwcI38V3ls7.80c84f95c7b36e4cb14bc0453b22445f043bfbfef5f4a2c88c7d113a4921b56f"
+
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Parse the JSON string to a Python object
+    parsed_json = json.loads(json_str)
+
+    # Initialize an empty list to hold the data dictionaries
+    data_list = []
+    unique_id = str(uuid.uuid4())
+
+    # Loop through all items in the parsed_json
+    for item in parsed_json['items']:
+        data_dict = {
+            "fields": {
+                "Product Name": item['name'],
+                "Source": item['source'],
+                "Category": category,
+                "Price": item['price'],  
+                "What We Like": item['what_we_like'],
+                "Description": item['description'],
+                "Images": [
+                    {
+                        "url": item['image']  # Placeholder, fill this from another source if available
+                    }
+                ],
+                "Best For": item['best_for'], 
+                "batch_id": unique_id
+            }
+        }
+        # Append the data_dict to the data_list
+        data_list.append(data_dict)
+    print("new json %s",json.dumps(data_list))
+ 
+    response = requests.post(API_URL, headers=headers, json={ "records":data_list })
+
+    #Create record in Generate Content Table
+    API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Generated%20Articles"
+
+    data = {
+        "fields": {
+            "batch_id": "e4d0da7e-436f-4668-aeeb-dd2d64f53ecf"
+        }}
+
+    requests.post(API_URL, headers=headers, json=data)
+
+
+    print("status code %s", response.status_code)
+    if response.status_code == 200:
+        print("Record successfully added.")
+    else:
+        print(f"Failed to add record: {response.content}")

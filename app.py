@@ -135,12 +135,12 @@ def detailed_summary(objective, content):
         "summary": "Write a comprehensive summary focusing on features and benefits for {objective}: {text}",
         "what_we_like": "Enumerate 1-3 points highlighting what stands out for {objective}: {text}",
         "best_for": "Specify the type of user or situation this product is ideally suited for {objective}: {text}",
-        # "price": "Extract and provide the specific price or price range of the product for {objective}, if available in the content: {text}",
-        # "dimensions": "Provide any available dimensions like length, width, height for {objective}: {text}",
-        # "weight": "Extract and mention the weight of the product if it is available for {objective}: {text}",
+        "price": "Extract and provide the specific price or price range of the product for {objective}, if available in the content: {text}",
+        "dimensions": "Provide any available dimensions like length, width, height for {objective}: {text}",
+        "weight": "Extract and mention the weight of the product if it is available for {objective}: {text}",
         "image": "If an image URL of the product is present, please extract and return it for {objective}: {text}",
-        # "buy_link": "Extract and provide the direct link where this product can be purchased, if available in the content f{objective}: {text}"
-}
+        "buy_link": "Extract and provide the direct link where this product can be purchased, if available in the content f{objective}: {text}"
+    }
     
     output = {}
     
@@ -160,7 +160,7 @@ def detailed_summary(objective, content):
         
     return json.dumps(output)  # Convert the output dictionary to JSON
 
-# scrape_website("Chicco KeyFit 30","https://babygearessentials.com/chicco-keyfit-30/")
+scrape_website("Chicco KeyFit 30","https://babygearessentials.com/chicco-keyfit-30/")
 
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
