@@ -27,9 +27,9 @@ load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
 
-# logging.basicConfig(filename='my_log_file.txt',  # Name of the log file
-#                     level=logging.INFO,           # Set the logging level
-#                     format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='my_log_file.txt',  # Name of the log file
+                    level=logging.INFO,           # Set the logging level
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 1. Tool for search
 
@@ -48,7 +48,7 @@ def search(query):
     response = requests.request("POST", url, headers=headers, data=payload)
 
     print(response.text)
-    # logging.info('SEARCH: %s', response.text)
+    logging.info('SEARCH: %s', response.text)
     return response.text
 
 
@@ -85,10 +85,10 @@ def scrape_website(objective: str, url: str):
 
             if len(text) > 10000:
                 output = detailed_summary(objective, text)
-                # logging.info('SCRAPE WEBSITE SUMMARY: %s', output)
+                logging.info('SCRAPE WEBSITE SUMMARY: %s', output)
                 return output
             else:
-                # logging.info('SCRAPE WEBSITE text: %s', text)
+                logging.info('SCRAPE WEBSITE text: %s', text)
                 return text
         else:
             print(f"HTTP request failed with status code {response.status_code}")
@@ -135,7 +135,7 @@ def detailed_summary(objective, content):
         "summary": "Write a comprehensive summary focusing on features and benefits for {objective}: {text}",
         "what_we_like": "Enumerate 1-3 points highlighting what stands out for {objective}: {text}",
         "best_for": "Specify the type of user or situation this product is ideally suited for {objective}: {text}",
-        # "price": "Extract and provide the specific price or price range of the product for {objective}, if available in the content: {text}",
+        "price": "Extract and provide the specific price or price range of the product for {objective}, if available in the content: {text}",
         # "dimensions": "Provide any available dimensions like length, width, height for {objective}: {text}",
         # "weight": "Extract and mention the weight of the product if it is available for {objective}: {text}",
         "image": "If an image URL of the product is present, please extract and return it for {objective}: {text}",
@@ -175,7 +175,7 @@ class ScrapeWebsiteTool(BaseTool):
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
     def _run(self, objective: str, url: str):
-        # logging.info('ScrapeWebsiteTool-BaseTool: %s', scrape_website(objective, url))
+        logging.info('ScrapeWebsiteTool-BaseTool: %s', scrape_website(objective, url))
         return scrape_website(objective, url)
 
     def _arun(self, url: str):
@@ -193,16 +193,16 @@ tools = [
 ]
 
 system_message = SystemMessage(
-    content="""You are a world-class researcher, who can do detailed research on any topic and produce facts-based results; you do not make things up, you will try as hard as possible to gather facts & data to back up the research. You should research for the best/most popular products base on the objective
+    content="""You are a world-class researcher, who can do detailed research on any topic and produce facts-based results; you do not make things up, you will try as hard as possible to gather facts & data to back up the research. You should research for top 10 best/most popular products base on the objective
 
             Please complete the following research objective while adhering to these rules:
             1/ You should do enough research to gather as much information as possible about the objective.
             2/ If there are URLs of relevant links & articles, please include them.
-            3/ After gathering data, think, "Is there anything new I should search for based on the data I collected to increase research quality?" If the answer is yes, continue; But don't do this more than 3 iterations.
-            4/ You should not make things up; you should only write facts & data that you have gathered. You should not make things up; you should only write facts & data that you have gathered. You should not make things up; you should only write facts & data that you have gathered.
+            3/ After gathering data, think, "Is there anything new I should search for based on the data I collected to increase research quality?" If the answer is yes, continue; But don't do this more than 2 iterations.
+            4/ You should not make things up; you should only write facts & data that you have gathered.
             5/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
             6/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
-            7/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"],"sources":[{"title":"Source Title","link":"Source Link"}]}
+            7/ {"research_summary":"Summary of the researçch...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","dimension":"Provide dimensions such as length,"image":"image url"],"sources":[{"title":"Source Title","link":"Source Link"}]}
             8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
 )
 
@@ -226,22 +226,22 @@ agent = initialize_agent(
 
 
 # 4. Use streamlit to create a web app
-# def main():
-#     st.set_page_config(page_title="AI research agent", page_icon=":bird:")
+def main():
+    st.set_page_config(page_title="AI research agent", page_icon=":bird:")
 
-#     st.header("AI research agent :bird:")
-#     query = st.text_input("Research goal")
+    st.header("AI research agent :bird:")
+    query = st.text_input("Research goal")
 
-#     if query:
-#         st.write("Doing research for ", query)
+    if query:
+        st.write("Doing research for ", query)
 
-#         result = agent({"input": query})
+        result = agent({"input": query})
 
-#         st.info(result['output'])
+        st.info(result['output'])
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
 
 
 # 5. Set this as an API endpoint via FastAPI

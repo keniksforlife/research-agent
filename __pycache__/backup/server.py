@@ -83,12 +83,34 @@ def scrape_website(objective: str, url: str):
     else:
         print(f"HTTP request failed with status code {response.status_code}")
 
+def count_tokens_simple(text):
+    return len(text.split())
+
+def truncate_to_max_tokens(text, max_tokens):
+    tokens = text.split()
+    if len(tokens) > max_tokens:
+        return ' '.join(tokens[:max_tokens])
+    else:
+        return text
 
 def summary(objective, content):
+
+    MAX_TOKENS = 16385  # The maximum tokens for the model you're using
+    TOKENS_RESERVED_FOR_OBJECTIVE = 50  # An estimate of how many tokens the objective and other text might consume
+
+
+
     llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
     text_splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+    
+    token_count = count_tokens_simple(content)
+
+    if token_count > (MAX_TOKENS - TOKENS_RESERVED_FOR_OBJECTIVE):
+        # Truncate the content
+        objective = truncate_to_max_tokens(objective, MAX_TOKENS - TOKENS_RESERVED_FOR_OBJECTIVE)
+
     docs = text_splitter.create_documents([content])
     map_prompt = """
     Write a summary of the following text for {objective}:
@@ -143,17 +165,17 @@ tools = [
 system_message = SystemMessage(
     content="""You are a world class researcher, who can do detailed research on any topic and produce facts based results; 
             you do not make things up, you will try as hard as possible to gather facts & data to back up the research;
-            You should research for the top best/most popular products base on the objective
+            You should research for the top 10 best/most popular products base on the objective
             
             Please make sure you complete the objective above with the following rules:
             1/ You should do enough research to gather as much information as possible about the objective
             2/ If there are url of relevant links & articles, you will scrape it to gather more information
             3/ After scraping & search, you should think "is there any new things i should search & scraping based on the data I collected to increase research quality?" If answer is yes, continue; But don't do this more than 3 iteratins
             4/ You should not make things up, you should only write facts & data that you have gathered
-            5/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
-            6/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
-            7/ For example, if the research topic is 'Baby Car Seats', the JSON should look something like this:
-            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"}]}"""
+            5/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
+            6/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
+            7/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"],"sources":[{"title":"Source Title","link":"Source Link"}]}
+            8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
 )
 
 agent_kwargs = {
@@ -207,15 +229,4 @@ def researchAgent(query: Query):
     query = query.query
     content = agent({"input": query})
     actual_content = content['output']
-    return remove_duplicate_json(actual_content)
-
-
-def remove_duplicate_json(json_str):
-
-    # Split the string by the delimiter '}{'
-    if "}\n{" in json_str:
-        json_list = json_str.split("}\n{")
-        return json_list[0]
-    
-    return json_list
-
+    return actual_content
