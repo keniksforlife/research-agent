@@ -217,5 +217,5 @@ def remove_duplicate_json(json_str):
         json_list = json_str.split("}\n{")
         return json_list[0]
     
-    return json_list
+    return json_str
 
