@@ -152,8 +152,8 @@ system_message = SystemMessage(
             4/ You should not make things up, you should only write facts & data that you have gathered
             5/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
             6/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
-            7/ For example, if the research topic is 'Baby Car Seats', the JSON should look something like this:
-            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"}]}"""
+            7/ The JSON should look something like this:
+            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source"}]}"""
 )
 
 agent_kwargs = {
