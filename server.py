@@ -18,6 +18,7 @@ import json
 from langchain.schema import SystemMessage
 from fastapi import FastAPI
 import streamlit as st
+from openai.error import InvalidRequestError
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
@@ -85,31 +86,35 @@ def scrape_website(objective: str, url: str):
 
 
 def summary(objective, content):
-    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+    try:
+        llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
-    docs = text_splitter.create_documents([content])
-    map_prompt = """
-    Write a summary of the following text for {objective}:
-    "{text}"
-    SUMMARY:
-    """
-    map_prompt_template = PromptTemplate(
-        template=map_prompt, input_variables=["text", "objective"])
+        text_splitter = RecursiveCharacterTextSplitter(
+            separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+        docs = text_splitter.create_documents([content])
+        map_prompt = """
+        Write a summary of the following text for {objective}:
+        "{text}"
+        SUMMARY:
+        """
+        map_prompt_template = PromptTemplate(
+            template=map_prompt, input_variables=["text", "objective"])
 
-    summary_chain = load_summarize_chain(
-        llm=llm,
-        chain_type='map_reduce',
-        map_prompt=map_prompt_template,
-        combine_prompt=map_prompt_template,
-        verbose=True
-    )
+        summary_chain = load_summarize_chain(
+            llm=llm,
+            chain_type='map_reduce',
+            map_prompt=map_prompt_template,
+            combine_prompt=map_prompt_template,
+            verbose=True
+        )
 
-    output = summary_chain.run(input_documents=docs, objective=objective)
+        output = summary_chain.run(input_documents=docs, objective=objective)
 
-    return output
-
+        return output
+    except InvalidRequestError as e:
+        # Handle the error gracefully
+        print(f"Error: {e}")
+        return None
 
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
