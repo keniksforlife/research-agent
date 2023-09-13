@@ -210,10 +210,10 @@ app = FastAPI()
 class Query(BaseModel):
     query: str
 
-def long_running_task(query):
+def long_running_task(query,unique_id):
     content = agent({"input": query})
     actual_content = content['output']
-    save_to_airtable(remove_duplicate_json(actual_content), query)
+    save_to_airtable(remove_duplicate_json(actual_content), query, unique_id)
 
 
 @app.post("/v2")
@@ -226,11 +226,12 @@ def researchAgent(query: Query):
 @app.post("/")
 def researchAgentV2(query: Query):
     query = query.query
+    unique_id = str(uuid.uuid4())
      # Start a new thread for the long-running task
-    thread = Thread(target=long_running_task, args=(query,))
+    thread = Thread(target=long_running_task, args=(query,unique_id))
     thread.start()
     
-    return {"message": "Request is being processed"}
+    return {"message": "Request is being processed","id" : unique_id}
 
 def remove_duplicate_json(json_str):
 
@@ -257,7 +258,7 @@ def is_valid_url(url):
         print(f"An error occurred: {e}")
         return ""
 
-def save_to_airtable(json_str,category):
+def save_to_airtable(json_str,category, unique_id):
     API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
     API_KEY = "patCKWLwcI38V3ls7.80c84f95c7b36e4cb14bc0453b22445f043bfbfef5f4a2c88c7d113a4921b56f"
 
@@ -271,7 +272,7 @@ def save_to_airtable(json_str,category):
 
     # Initialize an empty list to hold the data dictionaries
     data_list = []
-    unique_id = str(uuid.uuid4())
+    # unique_id = str(uuid.uuid4())
 
     # Loop through all items in the parsed_json
     for item in parsed_json['items']:
@@ -299,19 +300,19 @@ def save_to_airtable(json_str,category):
  
     response = requests.post(API_URL, headers=headers, json={ "records":data_list })
 
-    #Create record in Generate Content Table
-    API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Generated%20Articles"
 
-    data = {
-        "fields": {
-            "batch_id": unique_id
-        }}
-
-    requests.post(API_URL, headers=headers, json=data)
-
-
-    print("status code %s", response.status_code)
     if response.status_code == 200:
+
+        #Create record in Generate Content Table
+        API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Generated%20Articles"
+
+        data = {
+            "fields": {
+                "batch_id": unique_id
+            }}
+
+        requests.post(API_URL, headers=headers, json=data)
+
         print("Record successfully added.")
     else:
         print(f"Failed to add record: {response.content}")
