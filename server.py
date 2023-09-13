@@ -17,10 +17,12 @@ import requests
 import json
 from langchain.schema import SystemMessage
 from fastapi import FastAPI
+from threading import Thread
 import streamlit as st
 from openai.error import InvalidRequestError
 import json
 import uuid
+from urllib.parse import urlparse
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
@@ -160,7 +162,7 @@ system_message = SystemMessage(
             5/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
             6/ In the final output, You should include all reference data & links to back up your research and return the research findings in a structured JSON format; You should include all reference data & links to back up your research and return the research findings in a structured JSON format
             7/ The JSON should look something like this:
-            8/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"}]}"""
+            8/ {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "Product Description", "source": "URL Source / reference link", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "image": "Image URL in HD", "dimensions": "Dimensions data", "weight": "Weight data", "in_the_box": "What's included in the box"}]}"""
 )
 
 agent_kwargs = {
@@ -208,6 +210,11 @@ app = FastAPI()
 class Query(BaseModel):
     query: str
 
+def long_running_task(query):
+    content = agent({"input": query})
+    actual_content = content['output']
+    save_to_airtable(remove_duplicate_json(actual_content), query)
+
 
 @app.post("/v2")
 def researchAgent(query: Query):
@@ -219,11 +226,11 @@ def researchAgent(query: Query):
 @app.post("/")
 def researchAgentV2(query: Query):
     query = query.query
-    content = agent({"input": query})
-    actual_content = content['output']
-    save_to_airtable(remove_duplicate_json(actual_content),query)
-    return remove_duplicate_json(actual_content)
-
+     # Start a new thread for the long-running task
+    thread = Thread(target=long_running_task, args=(query,))
+    thread.start()
+    
+    return {"message": "Request is being processed"}
 
 def remove_duplicate_json(json_str):
 
@@ -234,6 +241,21 @@ def remove_duplicate_json(json_str):
     
     return json_str
 
+def is_valid_url(url):
+
+    try:
+        # Parse the URL
+        parsed_url = urlparse(url)
+        
+        # Check the components
+        if all([parsed_url.scheme, parsed_url.netloc]):
+            return url
+        else:
+            return ""
+    except Exception as e:
+        # Log the exception (in a real-world application)
+        print(f"An error occurred: {e}")
+        return ""
 
 def save_to_airtable(json_str,category):
     API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
@@ -263,10 +285,11 @@ def save_to_airtable(json_str,category):
                 "Description": item['description'],
                 "Images": [
                     {
-                        "url": item['image']  # Placeholder, fill this from another source if available
+                        "url": is_valid_url(item['image'])
                     }
                 ],
                 "Best For": item['best_for'], 
+                "In the box": item['in_the_box'], 
                 "batch_id": unique_id
             }
         }
@@ -281,7 +304,7 @@ def save_to_airtable(json_str,category):
 
     data = {
         "fields": {
-            "batch_id": "e4d0da7e-436f-4668-aeeb-dd2d64f53ecf"
+            "batch_id": unique_id
         }}
 
     requests.post(API_URL, headers=headers, json=data)
