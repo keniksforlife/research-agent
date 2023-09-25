@@ -361,12 +361,14 @@ def long_running_task(query,unique_id, max_attempts=3):
     actual_content = content['output']
     print("actual %s",actual_content)
 
-    if(is_valid_json):
-        save_to_airtable(remove_duplicate_json(actual_content), query, unique_id)
-    else:
-        print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
-        long_running_task(query, unique_id, max_attempts=max_attempts - 1)
-
+    try:
+        if(is_valid_json):
+            save_to_airtable(remove_duplicate_json(actual_content), query, unique_id)
+        else:
+            print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
+            long_running_task(query, unique_id, max_attempts=max_attempts - 1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 @app.post("/v2")
 def researchAgent(query: Query):
@@ -478,7 +480,7 @@ def save_to_airtable(json_str,category, unique_id):
         requests.post(API_URL, headers=headers, json=data)
 
          #Create record in Generate Content Table
-        API_URL = "https://hook.eu1.make.com/927ubkqsww2puh5uwhg6ong2fppw0t59"
+        API_URL = "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
 
         data = {
                 "batch_id": unique_id
