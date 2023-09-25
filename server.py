@@ -64,6 +64,8 @@ def search(query):
         return None
 
 
+print(search("Top 10 Best Teething Gels"))
+
 # 2. Tool for scraping
 
 def clean_text(text):
@@ -160,7 +162,8 @@ def scrape_website(objective: str, url: str):
         try:
             name_elem = soup.select_one('span.product-title-word-break')
             # price_elem = soup.select_one('.reinventPricePriceToPayMargin.priceToPay')
-            image_url_elem = soup.select_one('[data-action="main-image-click"] img')
+
+            image_url_elem = soup.select_one('img[data-old-hires]')['data-old-hires']
             image_url_elem1 = soup.select_one('.itemNo1 [data-action="main-image-click"] img')
             image_url_elem2 = soup.select_one('.itemNo2 [data-action="main-image-click"] img')
             image_url_elem3 = soup.select_one('.itemNo3 [data-action="main-image-click"] img')
@@ -174,8 +177,10 @@ def scrape_website(objective: str, url: str):
 
             # Check for None before accessing attributes
             name = str(name_elem.text.strip()) if name_elem else "N/A"
+
+            print(image_url_elem)
     
-            image_url = str(image_url_elem['src'].strip()) if image_url_elem else "N/A"
+            # image_url = str(image_url_elem['src'].strip()) if image_url_elem else "N/A"
             image_url1 = str(image_url_elem1['src'].strip()) if image_url_elem1 else "N/A"
             image_url2 = str(image_url_elem2['src'].strip()) if image_url_elem2 else "N/A"
             image_url3 = str(image_url_elem3['src'].strip()) if image_url_elem3 else "N/A"
@@ -193,11 +198,12 @@ def scrape_website(objective: str, url: str):
 
             product_details = {
                 "sp_name": name,
-                "sp_images": [
+                "Images": [
                     {
-                        "url": is_valid_url(image_url)
+                        "url": is_valid_url(image_url_elem)
                     }
                 ],
+                "Image Link": is_valid_url(image_url_elem),
                 "sp_other_details": details,
                 "sp_description": description,
                 "sp_about": about,
@@ -221,7 +227,7 @@ def scrape_website(objective: str, url: str):
     else:
         print(f"HTTP request failed with status code {response.status_code}")
 
-# ast = scrape_website("Scrape product details","https://www.amazon.com/Mommys-Bliss-Organic-Soothing-Massage/dp/B08643YT9K")
+# ast = scrape_website("Scrape product details","https://www.amazon.com/Orajel-Tooth-Cleanser-Finger-Fruity/dp/B000GFIL8M")
 # print(ast)
 
 def summary(objective, content):
@@ -290,19 +296,20 @@ system_message = SystemMessage(
             
             Please complete the objective above with the following rules:
             1/ You should scrape Amazon's website to gather as much information as possible about the top instock 10 best/most popular products in a given category. Please ignore out of stock products
-            2/ Specifically, gather the direct Amazon URLs of these top 10 individual products. Only return URLs that include '/dp/' in the link, as these are direct product pages. Do not return URLs that lead to category or search result pages.
-            3/ After each scraping iteration, evaluate if additional scraping rounds could improve the quality of your research. Limit this to no more than 3 iterations.
-            4/ Only include facts & data gathered from Amazon's website. Do not make things up.
-            5/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
+            2/ Return results that are directly related to the specific category or keyword. Do not include unrelated products.
+            3/ Specifically, gather the direct Amazon URLs of these top 10 individual products. Only return URLs that include '/dp/' in the link, as these are direct product pages. Do not return URLs that lead to category or search result pages.
+            4/ After each scraping iteration, evaluate if additional scraping rounds could improve the quality of your research. Limit this to no more than 3 iterations.
+            5/ Only include facts & data gathered from Amazon's website. Do not make things up.
             6/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
             7/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
-            8/ The JSON should look like this:
-            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "image": "product_image_url", "dimensions": "product_other_details", "weight": "Weight data", "in_the_box": "What's included in the box"}]}
+            8/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
             9/ The JSON should look like this:
-            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "image": "product_image_url", "dimensions": "product_other_details", "weight": "Weight data", "in_the_box": "What's included in the box"}]}
+            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product","in_the_box": "What's included in the box"}]}
             10/ The JSON should look like this:
-            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "image": "product_image_url", "dimensions": "product_other_details", "weight": "Weight data", "in_the_box": "What's included in the box"}]}
-            11/ If the output is not in JSON structured format, please update it and format in a structured JSON using the above template.
+            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "in_the_box": "What's included in the box"}]}
+            11/ The JSON should look like this:
+            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "in_the_box": "What's included in the box"}]}
+            12/ If the output is not in JSON structured format, please update it and format in a structured JSON using the above template.
             """
 )
 
@@ -430,11 +437,6 @@ def save_to_airtable(json_str,category, unique_id):
                 "Price": item['price'],  
                 "What We Like": item['what_we_like'],
                 "Description": item['description'],
-                "Images": [
-                    {
-                        "url": is_valid_url(item['image'])
-                    }
-                ],
                 "Best For": item['best_for'], 
                 "In the box": item['in_the_box'], 
                 "batch_id": unique_id
