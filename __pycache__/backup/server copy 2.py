@@ -141,8 +141,6 @@ def scrape_website(objective: str, url: str):
         'Content-Type': 'application/json',
     }
 
-    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537'
-    
     # Define the data to be sent in the request
     data = {
         "url": url
@@ -165,8 +163,12 @@ def scrape_website(objective: str, url: str):
             name_elem = soup.select_one('span.product-title-word-break')
             # price_elem = soup.select_one('.reinventPricePriceToPayMargin.priceToPay')
 
-            image_url_elem = soup.select_one('img[data-old-hires]')
-            image_url_elem2 = soup.select_one('[data-action="main-image-click"] img')
+            image_url_elem = soup.select_one('img[data-old-hires]')['data-old-hires']
+            image_url_elem1 = soup.select_one('.itemNo1 [data-action="main-image-click"] img')
+            image_url_elem2 = soup.select_one('.itemNo2 [data-action="main-image-click"] img')
+            image_url_elem3 = soup.select_one('.itemNo3 [data-action="main-image-click"] img')
+            image_url_elem4 = soup.select_one('.itemNo4 [data-action="main-image-click"] img')
+            image_url_elem5 = soup.select_one('.itemNo5 [data-action="main-image-click"] img')
             details_elem = soup.select_one('div#detailBullets_feature_div')
             details_elem2 = soup.select_one('div#productDetails_feature_div')
             details_elem3 = soup.select_one('div#prodDetails')
@@ -175,14 +177,18 @@ def scrape_website(objective: str, url: str):
 
             # Check for None before accessing attributes
             name = str(name_elem.text.strip()) if name_elem else "N/A"
+
+            print(image_url_elem)
     
+            # image_url = str(image_url_elem['src'].strip()) if image_url_elem else "N/A"
+            image_url1 = str(image_url_elem1['src'].strip()) if image_url_elem1 else "N/A"
+            image_url2 = str(image_url_elem2['src'].strip()) if image_url_elem2 else "N/A"
+            image_url3 = str(image_url_elem3['src'].strip()) if image_url_elem3 else "N/A"
+            image_url4 = str(image_url_elem4['src'].strip()) if image_url_elem4 else "N/A"
+            image_url5 = str(image_url_elem5['src'].strip()) if image_url_elem5 else "N/A"
             details = clean_text(str(details_elem.text.strip())) if details_elem else "N/A"
             description = str(description_elem.text.strip()) if description_elem else "N/A"
             about = str(about_elem.text.strip()) if about_elem else "N/A"
-            image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
-
-            if (image_url == "N/A"):
-                image_url = clean_text(str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
 
             if(details == "N/A"):
                 details = clean_text(str(details_elem2.text.strip())) if details_elem2 else "N/A"
@@ -194,17 +200,15 @@ def scrape_website(objective: str, url: str):
                 "sp_name": name,
                 "Images": [
                     {
-                        "url": is_valid_url(image_url)
+                        "url": is_valid_url(image_url_elem)
                     }
                 ],
-                "Image Link": is_valid_url(image_url),
+                "Image Link": is_valid_url(image_url_elem),
                 "sp_other_details": details,
                 "sp_description": description,
                 "sp_about": about,
                 "Buy Link": url,
             }
-
-            print(product_details)
 
             # Serialize the Python dictionary to a JSON-formatted string
             # product_details_json = json.dumps(product_details, ensure_ascii=False)
@@ -223,7 +227,7 @@ def scrape_website(objective: str, url: str):
     else:
         print(f"HTTP request failed with status code {response.status_code}")
 
-# ast = scrape_website("Scrape product details","https://www.amazon.com/Signature-Lansinoh-Electric-Portable-Adjustable/dp/B000P9XJ5E")
+# ast = scrape_website("Scrape product details","https://www.amazon.com/Orajel-Tooth-Cleanser-Finger-Fruity/dp/B000GFIL8M")
 # print(ast)
 
 def summary(objective, content):
@@ -364,14 +368,14 @@ def long_running_task(query,unique_id, max_attempts=3):
     actual_content = content['output']
     print("actual %s",actual_content)
 
-    # try:
-    if(is_valid_json):
-        save_to_airtable(remove_duplicate_json(actual_content), query, unique_id)
-    else:
-        print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
-        long_running_task(query, unique_id, max_attempts=max_attempts - 1)
-    # except Exception as e:
-    #     print(f"An error occurred: {e}")
+    try:
+        if(is_valid_json):
+            save_to_airtable(remove_duplicate_json(actual_content), query, unique_id)
+        else:
+            print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
+            long_running_task(query, unique_id, max_attempts=max_attempts - 1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 @app.post("/v2")
 def researchAgent(query: Query):
@@ -410,7 +414,7 @@ def is_valid_json(json_str):
 def save_to_airtable(json_str,category, unique_id):
     API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
     API_KEY = "patCKWLwcI38V3ls7.80c84f95c7b36e4cb14bc0453b22445f043bfbfef5f4a2c88c7d113a4921b56f"
-    print("savetoairtale")
+
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
