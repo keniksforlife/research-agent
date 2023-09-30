@@ -6,3 +6,4 @@ python-dotenv==1.0.0
 Requests==2.31.0
 streamlit==1.26.0
 pyppeteer=1.0.2
+dotenv==16.3.1
