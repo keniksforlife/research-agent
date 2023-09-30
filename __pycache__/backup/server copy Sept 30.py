@@ -27,10 +27,6 @@ from urllib.parse import urlparse
 from json import JSONDecodeError
 import random
 import time
-import asyncio
-from pyppeteer import launch
-from pyppeteer import connect
-
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
@@ -55,18 +51,14 @@ def search(query):
 
     try:
         response = requests.request("POST", url, headers=headers, data=payload)
-        # Raise an HTTPError if the HTTP request returned an unsuccessful status code
-        response.raise_for_status()
+        response.raise_for_status()  # Raise an HTTPError if the HTTP request returned an unsuccessful status code
 
         results_json = json.loads(response.text)
-        # Retrieve the list of organic results
-        organic_results = results_json.get('organic', [])
+        organic_results = results_json.get('organic', [])  # Retrieve the list of organic results
 
-        amazon_results = [
-            result for result in organic_results if 'amazon.com' in result.get('link', '')]
+        amazon_results = [result for result in organic_results if 'amazon.com' in result.get('link', '')]
 
-        logging.info(
-            f"Successfully fetched {len(amazon_results)} Amazon results.")
+        logging.info(f"Successfully fetched {len(amazon_results)} Amazon results.")
         return amazon_results
 
     except requests.RequestException as e:
@@ -81,19 +73,18 @@ def search(query):
 def clean_text(text):
     # Remove any kind of whitespace (including newlines and tabs)
     text = re.sub(r'\s+', ' ', text).strip()
-
+    
     # Replace newline characters with commas
     # text = text.replace("\n", "\n")
-
+    
     return text
-
 
 def is_valid_url(url):
 
     try:
         # Parse the URL
         parsed_url = urlparse(url)
-
+        
         # Check the components
         if all([parsed_url.scheme, parsed_url.netloc]):
             return url
@@ -103,27 +94,16 @@ def is_valid_url(url):
         # Log the exception (in a real-world application)
         print(f"An error occurred: {e}")
         return ""
-
-
-# async def scrape_website(objective: str, url: str):
+# def scrape_website(objective: str, url: str):
 #     # scrape website, and also will summarize the content based on objective if the content is too large
 #     # objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
 
-#     browser = await launch(headless=True)
-#     page = await browser.newPage()
-
-#     print("Scraping Amazon website...")
+#     print("Scraping website...")
 #     # Define the headers for the request
 #     headers = {
 #         'Cache-Control': 'no-cache',
 #         'Content-Type': 'application/json',
 #     }
-
-#     # Randomly select a User-Agent
-#     selected_user_agent = random.choice(user_agents)
-
-#     # Update the headers with the selected User-Agent
-#     headers['User-Agent'] = selected_user_agent
 
 #     # Define the data to be sent in the request
 #     data = {
@@ -133,193 +113,134 @@ def is_valid_url(url):
 #     # Convert Python object to JSON string
 #     data_json = json.dumps(data)
 
-#     time.sleep(random.uniform(5, 10))
-
 #     # Send the POST request
 #     post_url = f"https://chrome.browserless.io/content?token={brwoserless_api_key}"
 #     response = requests.post(post_url, headers=headers, data=data_json)
 
-#     print("RESPONSE: ",response.content)
 #     # Check the response status code
 #     if response.status_code == 200:
 #         soup = BeautifulSoup(response.content, "html.parser")
-#         # text = soup.get_text()
-#         # print("CONTENTTTTTT:", text)
+#         text = soup.get_text()
+#         print("CONTENTTTTTT:", text)
 
-#         try:
-#             name_elem = soup.select_one('span.product-title-word-break')
-#             # price_elem = soup.select_one('.reinventPricePriceToPayMargin.priceToPay')
-
-#             image_url_elem = soup.select_one('img[data-old-hires]')
-#             image_url_elem2 = soup.select_one('[data-action="main-image-click"] img')
-#             details_elem = soup.select_one('div#detailBullets_feature_div')
-#             details_elem2 = soup.select_one('div#productDetails_feature_div')
-#             details_elem3 = soup.select_one('div#prodDetails')
-#             description_elem = soup.select_one('.a-spacing-small p span')
-#             about_elem = soup.select_one('div.a-spacing-medium.a-spacing-top-small')
-
-#             # Check for None before accessing attributes
-#             name = str(name_elem.text.strip()) if name_elem else "N/A"
-
-#             details = clean_text(str(details_elem.text.strip())) if details_elem else "N/A"
-#             description = str(description_elem.text.strip()) if description_elem else "N/A"
-#             about = str(about_elem.text.strip()) if about_elem else "N/A"
-#             image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
-
-#             if (image_url == "N/A"):
-#                 image_url = clean_text(str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
-
-#             if(details == "N/A"):
-#                 details = clean_text(str(details_elem2.text.strip())) if details_elem2 else "N/A"
-
-#             if(details == "N/A"):
-#                 details = clean_text(str(details_elem3.text.strip())) if details_elem3 else "N/A"
-
-#             product_details = {
-#                 "sp_name": name,
-#                 "Images": [
-#                     {
-#                         "url": is_valid_url(image_url)
-#                     }
-#                 ],
-#                 "Image Link": is_valid_url(image_url),
-#                 "sp_other_details": details,
-#                 "sp_description": description,
-#                 "sp_about": about,
-#                 "Buy Link": url,
-#             }
-
-#             print(product_details)
-
-#             # Serialize the Python dictionary to a JSON-formatted string
-#             # product_details_json = json.dumps(product_details, ensure_ascii=False)
-
-#             # all_product_details.append(product_details)
-
-#             if (name == "N/A"):
-#                 return "Not a valid product content. Please find another product."
-#             else:
-#                 return product_details
-
-
-#         except AttributeError as e:
-#             logging.error(f"Failed to scrape some attributes: {e}")
-
+#         if len(text) > 10000:
+#             output = summary(objective, text)
+#             return output
+#         else:
+#             return text
 #     else:
 #         print(f"HTTP request failed with status code {response.status_code}")
 
-async def scrape_website(objective: str, url: str):
-    # Connect to Browserless.io
-    browser = await connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
 
-    # Create a new page
-    page = await browser.newPage()
+def scrape_website(objective: str, url: str):
+    # scrape website, and also will summarize the content based on objective if the content is too large
+    # objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
+
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537',
+        'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/73.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.0 Safari/605.1.15',
+        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60',
+        'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)'
+    ]
+    print("Scraping Amazon website...")
+    # Define the headers for the request
+    headers = {
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'application/json',
+    }
 
     # Randomly select a User-Agent
     selected_user_agent = random.choice(user_agents)
 
-    # Set User-Agent
-    await page.setUserAgent(selected_user_agent)
+    # Update the headers with the selected User-Agent
+    headers['User-Agent'] = selected_user_agent
+ 
+    # Define the data to be sent in the request
+    data = {
+        "url": url
+    }
 
-    # Navigate to the URL
-    await page.goto(url)
-    print("Visited: ", url)
+    # Convert Python object to JSON string
+    data_json = json.dumps(data)
 
-    # Random sleep to mimic user reading page
-    await asyncio.sleep(random.uniform(3, 7))
+    time.sleep(random.uniform(5, 10))
 
-    try:
-        await page.mouse.move(random.randint(0, 500), random.randint(0, 500))
-    except pyppeteer.errors.NetworkError as e:
-        print(f"An error occurred: {e}")
+    # Send the POST request
+    post_url = f"https://chrome.browserless.io/content?token={brwoserless_api_key}"
+    response = requests.post(post_url, headers=headers, data=data_json)
+
+    print("RESPONSE: ",response.content)
+    # Check the response status code
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, "html.parser")
+        # text = soup.get_text()
+        # print("CONTENTTTTTT:", text)
+
+        try:
+            name_elem = soup.select_one('span.product-title-word-break')
+            # price_elem = soup.select_one('.reinventPricePriceToPayMargin.priceToPay')
+
+            image_url_elem = soup.select_one('img[data-old-hires]')
+            image_url_elem2 = soup.select_one('[data-action="main-image-click"] img')
+            details_elem = soup.select_one('div#detailBullets_feature_div')
+            details_elem2 = soup.select_one('div#productDetails_feature_div')
+            details_elem3 = soup.select_one('div#prodDetails')
+            description_elem = soup.select_one('.a-spacing-small p span')
+            about_elem = soup.select_one('div.a-spacing-medium.a-spacing-top-small')
+
+            # Check for None before accessing attributes
+            name = str(name_elem.text.strip()) if name_elem else "N/A"
     
-    # Random sleep before next action
-    await asyncio.sleep(random.uniform(2, 5))
-    
-    # Scrape content and manipulate as needed
-    content = await page.content()
-    soup = BeautifulSoup(content, "html.parser")
+            details = clean_text(str(details_elem.text.strip())) if details_elem else "N/A"
+            description = str(description_elem.text.strip()) if description_elem else "N/A"
+            about = str(about_elem.text.strip()) if about_elem else "N/A"
+            image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
 
-    try:
-        name_elem = soup.select_one('span.product-title-word-break')
-        # price_elem = soup.select_one('.reinventPricePriceToPayMargin.priceToPay')
+            if (image_url == "N/A"):
+                image_url = clean_text(str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
 
-        image_url_elem = soup.select_one('img[data-old-hires]')
-        image_url_elem2 = soup.select_one('[data-action="main-image-click"] img')
-        details_elem = soup.select_one('div#detailBullets_feature_div')
-        details_elem2 = soup.select_one('div#productDetails_feature_div')
-        details_elem3 = soup.select_one('div#prodDetails')
-        description_elem = soup.select_one('.a-spacing-small p span')
-        about_elem = soup.select_one('div.a-spacing-medium.a-spacing-top-small')
+            if(details == "N/A"):
+                details = clean_text(str(details_elem2.text.strip())) if details_elem2 else "N/A"
 
-        # Check for None before accessing attributes
-        name = str(name_elem.text.strip()) if name_elem else "N/A"
+            if(details == "N/A"):
+                details = clean_text(str(details_elem3.text.strip())) if details_elem3 else "N/A"
 
-        details = clean_text(str(details_elem.text.strip())) if details_elem else "N/A"
-        description = str(description_elem.text.strip()) if description_elem else "N/A"
-        about = str(about_elem.text.strip()) if about_elem else "N/A"
-        image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
+            product_details = {
+                "sp_name": name,
+                "Images": [
+                    {
+                        "url": is_valid_url(image_url)
+                    }
+                ],
+                "Image Link": is_valid_url(image_url),
+                "sp_other_details": details,
+                "sp_description": description,
+                "sp_about": about,
+                "Buy Link": url,
+            }
 
-        if (image_url == "N/A"):
-            image_url = clean_text(str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
+            print(product_details)
 
-        if(details == "N/A"):
-            details = clean_text(str(details_elem2.text.strip())) if details_elem2 else "N/A"
+            # Serialize the Python dictionary to a JSON-formatted string
+            # product_details_json = json.dumps(product_details, ensure_ascii=False)
 
-        if(details == "N/A"):
-            details = clean_text(str(details_elem3.text.strip())) if details_elem3 else "N/A"
+            # all_product_details.append(product_details)
 
-        product_details = {
-            "sp_name": name,
-            "Images": [
-                {
-                    "url": is_valid_url(image_url)
-                }
-            ],
-            "Image Link": is_valid_url(image_url),
-            "sp_other_details": details,
-            "sp_description": description,
-            "sp_about": about,
-            "Buy Link": url,
-        }
+            if (name == "N/A"):
+                return "Not a valid product content. Please find another product."
+            else:
+                return product_details
+        
 
-        print(product_details)
+        except AttributeError as e:
+            logging.error(f"Failed to scrape some attributes: {e}")
 
-        # Serialize the Python dictionary to a JSON-formatted string
-        # product_details_json = json.dumps(product_details, ensure_ascii=False)
+    else:
+        print(f"HTTP request failed with status code {response.status_code}")
 
-        # all_product_details.append(product_details)
-
-        if (name == "N/A"):
-            return "Not a valid product content. Please find another product."
-        else:
-            return product_details
-    
-
-    except AttributeError as e:
-        logging.error(f"Failed to scrape some attributes: {e}")
-
-    await browser.close()
-
-# Your existing list of user agents
-user_agents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-]
-
-
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(scrape_website("Scrape product details",
-                        # "https://www.amazon.com/Signature-Lansinoh-Electric-Portable-Adjustable/dp/B000P9XJ5E"))
-
-# ast = scrape_website("Scrape product details","https://www.amazon.com/Signature-Lansinoh-Electric-Portable-Adjustable/dp/B000P9XJ5E")
-# print(ast)
-
+ast = scrape_website("Scrape product details","https://www.amazon.com/Signature-Lansinoh-Electric-Portable-Adjustable/dp/B000P9XJ5E")
+print(ast)
 
 def summary(objective, content):
     try:
@@ -352,7 +273,6 @@ def summary(objective, content):
         print(f"Error: {e}")
         return None
 
-
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
     objective: str = Field(
@@ -366,7 +286,7 @@ class ScrapeWebsiteTool(BaseTool):
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
     def _run(self, objective: str, url: str):
-        return asyncio.run(scrape_website(objective, url))
+        return scrape_website(objective, url)
 
     def _arun(self, url: str):
         raise NotImplementedError("error here")
@@ -451,26 +371,23 @@ app = FastAPI()
 class Query(BaseModel):
     query: str
 
-
-def long_running_task(query, unique_id, max_attempts=3):
+def long_running_task(query,unique_id, max_attempts=3):
     if max_attempts == 0:
         print("Maximum attempts reached. Could not get valid JSON.")
         return
-
+    
     content = agent({"input": "Top 10 " + query})
     actual_content = content['output']
-    print("actual %s", actual_content)
+    print("actual %s",actual_content)
 
     # try:
-    if (is_valid_json):
-        save_to_airtable(remove_duplicate_json(
-            actual_content), query, unique_id)
+    if(is_valid_json):
+        save_to_airtable(remove_duplicate_json(actual_content), query, unique_id)
     else:
         print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
         long_running_task(query, unique_id, max_attempts=max_attempts - 1)
     # except Exception as e:
     #     print(f"An error occurred: {e}")
-
 
 @app.post("/v2")
 def researchAgent(query: Query):
@@ -479,17 +396,15 @@ def researchAgent(query: Query):
     actual_content = content['output']
     return remove_duplicate_json(actual_content)
 
-
 @app.post("/")
 def researchAgentV2(query: Query):
     query = query.query
     unique_id = str(uuid.uuid4())
-    # Start a new thread for the long-running task
-    thread = Thread(target=long_running_task, args=(query, unique_id))
+     # Start a new thread for the long-running task
+    thread = Thread(target=long_running_task, args=(query,unique_id))
     thread.start()
-
-    return {"message": "Request is being processed", "id": unique_id}
-
+    
+    return {"message": "Request is being processed","id" : unique_id}
 
 def remove_duplicate_json(json_str):
 
@@ -497,9 +412,8 @@ def remove_duplicate_json(json_str):
     if "}\n{" in json_str:
         json_list = json_str.split("}\n{")
         return json_list[0] + "}"
-
+    
     return json_str
-
 
 def is_valid_json(json_str):
     try:
@@ -509,7 +423,7 @@ def is_valid_json(json_str):
         return False
 
 
-def save_to_airtable(json_str, category, unique_id):
+def save_to_airtable(json_str,category, unique_id):
     API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
     API_KEY = "patCKWLwcI38V3ls7.80c84f95c7b36e4cb14bc0453b22445f043bfbfef5f4a2c88c7d113a4921b56f"
     print("savetoairtale")
@@ -532,19 +446,18 @@ def save_to_airtable(json_str, category, unique_id):
                 "Product Name": item['name'],
                 "Source": item['source'],
                 "Category": category,
-                "Price": item['price'],
+                "Price": item['price'],  
                 "What We Like": item['what_we_like'],
                 "Description": item['description'],
-                "Best For": item['best_for'],
-                "In the box": item['in_the_box'],
+                "Best For": item['best_for'], 
+                "In the box": item['in_the_box'], 
                 "batch_id": unique_id
             }
         }
         # Append the data_dict to the data_list
         data_list.append(data_dict)
 
-        product_details = asyncio.run(scrape_website(
-            "Scrape product details", item['source']))
+        product_details = scrape_website("Scrape product details",item['source'])
         print("product_details", product_details)
 
         if isinstance(product_details, dict):
@@ -554,24 +467,23 @@ def save_to_airtable(json_str, category, unique_id):
             print("Warning: product_details is not a dictionary. Skipping update.")
 
         if len(data_list) >= 10:
-            response = requests.post(API_URL, headers=headers, json={
-                                     "records": data_list})
+            response = requests.post(API_URL, headers=headers, json={"records": data_list})
             if response.status_code != 200:
                 print(f"Failed to add record: {response.content}")
             data_list.clear()  # Clear the list for the next batch
 
-    print("new json %s", json.dumps(data_list))
-
+    print("new json %s",json.dumps(data_list))
+ 
     # Send any remaining records that are less than 10
     if len(data_list) > 0:
-        response = requests.post(API_URL, headers=headers, json={
-                                 "records": data_list})
+        response = requests.post(API_URL, headers=headers, json={"records": data_list})
         if response.status_code != 200:
             print(f"Failed to add record: {response.content}")
 
+
     if response.status_code == 200:
 
-        # Create record in Generate Content Table
+        #Create record in Generate Content Table
         API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Generated%20Articles"
 
         data = {
@@ -581,12 +493,12 @@ def save_to_airtable(json_str, category, unique_id):
 
         requests.post(API_URL, headers=headers, json=data)
 
-        # Create record in Generate Content Table
+         #Create record in Generate Content Table
         API_URL = "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
 
         data = {
-            "batch_id": unique_id
-        }
+                "batch_id": unique_id
+            }
 
         requests.get(API_URL, json=data)
 
