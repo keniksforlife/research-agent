@@ -29,31 +29,60 @@ import random
 import time
 import asyncio
 from pyppeteer import connect
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
-airtable_key = os.getenv("AIRTABLE_API_KEY")
 
-# List of User Agents
-user_agents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-]
+all_product_details = []
+
+# 1. Tool for search
 
 
-# HELPER FUNCTIONS
+def search(query):
+    url = "https://google.serper.dev/search"
+
+    payload = json.dumps({
+        "q": query + " site:amazon.com intext:/dp/"
+    })
+
+    headers = {
+        'X-API-KEY': serper_api_key,
+        'Content-Type': 'application/json'
+    }
+
+    try:
+        response = requests.request("POST", url, headers=headers, data=payload)
+        # Raise an HTTPError if the HTTP request returned an unsuccessful status code
+        response.raise_for_status()
+
+        results_json = json.loads(response.text)
+        # Retrieve the list of organic results
+        organic_results = results_json.get('organic', [])
+
+        amazon_results = [
+            result for result in organic_results if 'amazon.com' in result.get('link', '')]
+
+        logging.info(
+            f"Successfully fetched {len(amazon_results)} Amazon results.")
+        return amazon_results
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch search results: {e}")
+        return None
+
+
+# print(search("Top 10 Best Teething Gels"))
+
+# 2. Tool for scraping
+
 def clean_text(text):
     # Remove any kind of whitespace (including newlines and tabs)
     text = re.sub(r'\s+', ' ', text).strip()
+
+    # Replace newline characters with commas
+    # text = text.replace("\n", "\n")
 
     return text
 
@@ -74,100 +103,7 @@ def is_valid_url(url):
         print(f"An error occurred: {e}")
         return ""
 
-
-def remove_duplicate_json(json_str):
-
-    # Split the string by the delimiter '}{'
-    if "}\n{" in json_str:
-        json_list = json_str.split("}\n{")
-        return json_list[0] + "}"
-
-    return json_str
-
-
-def is_valid_json(json_str):
-    try:
-        json.loads(json_str)
-        return True
-    except JSONDecodeError:
-        return False
-
-
-# 1. Tool for search
-
-
-def calculate_similarity(text1, text2):
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([text1, text2])
-    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    return similarity
-
-
-def filter_similar_products(product_list, threshold=0.35):
-    filtered_products = []
-    for i, product1 in enumerate(product_list):
-        is_similar = False
-        for j, product2 in enumerate(filtered_products):
-            similarity = calculate_similarity(
-                product1['title'], product2['title'])
-            # print(f"Comparing: {product1['title']} AND {product2['title']}. Similarity: {similarity}")
-            if similarity > threshold:
-                is_similar = True
-                # print(f"Products are similar. Skipping: {product1['title']}")
-                break
-        if not is_similar:
-            filtered_products.append(product1)
-            # print(f"Adding product: {product1['title']}")
-    return filtered_products
-
-
-def search(query):
-    url = "https://google.serper.dev/search"
-
-    payload = json.dumps({
-        "q": query + " site:amazon.com intext:/dp/",
-        "num": 40
-    })
-
-    headers = {
-        'X-API-KEY': serper_api_key,
-        'Content-Type': 'application/json'
-    }
-
-    try:
-        response = requests.request("POST", url, headers=headers, data=payload)
-        # Raise an HTTPError if the HTTP request returned an unsuccessful status code
-        response.raise_for_status()
-
-        results_json = json.loads(response.text)
-        # Retrieve the list of organic results
-        organic_results = results_json.get('organic', [])
-
-        amazon_results = [
-            result for result in organic_results if 'amazon.com' in result.get('link', '')]
-
-        print(
-            f"Successfully fetched {len(amazon_results)} Amazon results.")
-
-        # Filter out similar products
-        unique_amazon_results = filter_similar_products(amazon_results)
-
-        print(
-            f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
-
-        return unique_amazon_results
-
-    except requests.RequestException as e:
-        logging.error(f"Failed to fetch search results: {e}")
-        return None
-
-
-# print(search("Best Pregnancy Pillows"))
-# 2. Tool for scraping
-
-
 async def scrape_website(objective: str, url: str):
-    print("Start Scraping")
     # Connect to Browserless.io
     browser = await connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
 
@@ -191,50 +127,42 @@ async def scrape_website(objective: str, url: str):
         await page.mouse.move(random.randint(0, 500), random.randint(0, 500))
     except pyppeteer.errors.NetworkError as e:
         print(f"An error occurred: {e}")
-
+    
     # Random sleep before next action
     await asyncio.sleep(random.uniform(2, 5))
-
+    
     # Scrape content and manipulate as needed
     content = await page.content()
     soup = BeautifulSoup(content, "html.parser")
 
     try:
         name_elem = soup.select_one('span.product-title-word-break')
-        price_elem = soup.select_one(
-            '.reinventPricePriceToPayMargin.priceToPay')
+        price_elem = soup.select_one('.reinventPricePriceToPayMargin.priceToPay')
 
         image_url_elem = soup.select_one('img[data-old-hires]')
-        image_url_elem2 = soup.select_one(
-            '[data-action="main-image-click"] img')
+        image_url_elem2 = soup.select_one('[data-action="main-image-click"] img')
         details_elem = soup.select_one('div#detailBullets_feature_div')
         details_elem2 = soup.select_one('div#productDetails_feature_div')
         details_elem3 = soup.select_one('div#prodDetails')
         description_elem = soup.select_one('.a-spacing-small p span')
-        about_elem = soup.select_one(
-            'div.a-spacing-medium.a-spacing-top-small')
+        about_elem = soup.select_one('div.a-spacing-medium.a-spacing-top-small')
 
         # Check for None before accessing attributes
         name = str(name_elem.text.strip()) if name_elem else "N/A"
 
-        details = clean_text(str(details_elem.text.strip())
-                             ) if details_elem else "N/A"
-        description = str(description_elem.text.strip()
-                          ) if description_elem else "N/A"
+        details = clean_text(str(details_elem.text.strip())) if details_elem else "N/A"
+        description = str(description_elem.text.strip()) if description_elem else "N/A"
         about = str(about_elem.text.strip()) if about_elem else "N/A"
         image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
 
         if (image_url == "N/A"):
-            image_url = clean_text(
-                str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
+            image_url = clean_text(str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
 
-        if (details == "N/A"):
-            details = clean_text(
-                str(details_elem2.text.strip())) if details_elem2 else "N/A"
+        if(details == "N/A"):
+            details = clean_text(str(details_elem2.text.strip())) if details_elem2 else "N/A"
 
-        if (details == "N/A"):
-            details = clean_text(
-                str(details_elem3.text.strip())) if details_elem3 else "N/A"
+        if(details == "N/A"):
+            details = clean_text(str(details_elem3.text.strip())) if details_elem3 else "N/A"
 
         product_details = {
             "sp_name": name,
@@ -255,15 +183,29 @@ async def scrape_website(objective: str, url: str):
         # Serialize the Python dictionary to a JSON-formatted string
         # product_details_json = json.dumps(product_details, ensure_ascii=False)
 
+        # all_product_details.append(product_details)
+
         if (name == "N/A"):
             return "Not a valid product content. Please find another product."
         else:
             return product_details
+    
 
     except AttributeError as e:
         logging.error(f"Failed to scrape some attributes: {e}")
 
     await browser.close()
+
+# List of User Agents
+user_agents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+]
 
 
 class ScrapeWebsiteInput(BaseModel):
@@ -274,13 +216,11 @@ class ScrapeWebsiteInput(BaseModel):
 
 
 class ScrapeWebsiteTool(BaseTool):
-    print("Start ScrapeWebsite Tool")
     name = "scrape_website"
     description = "useful when you need to get data from a website url, passing both url and objective to the function; DO NOT make up any url, the url should only be from the search results"
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
     def _run(self, objective: str, url: str):
-        print("WEBSITE Tool: ", url)
         return asyncio.run(scrape_website(objective, url))
 
     def _arun(self, url: str):
@@ -340,6 +280,25 @@ agent = initialize_agent(
 )
 
 
+# 4. Use streamlit to create a web app
+# def main():
+#     st.set_page_config(page_title="AI research agent", page_icon=":bird:")
+
+#     st.header("AI research agent :bird:")
+#     query = st.text_input("Research goal")
+
+#     if query:
+#         st.write("Doing research for ", query)
+
+#         result = agent({"input": query})
+
+#         st.info(result['output'])
+
+
+# if __name__ == '__main__':
+#     main()
+
+
 # 5. Set this as an API endpoint via FastAPI
 app = FastAPI()
 
@@ -353,63 +312,27 @@ def long_running_task(query, unique_id, max_attempts=3):
         print("Maximum attempts reached. Could not get valid JSON.")
         return
 
-    # content = agent({"input": "Top 10 " + query})
-    search_results = search(query)
+    content = agent({"input": "Top 10 " + query})
+    actual_content = content['output']
+    print("actual %s", actual_content)
 
-    if search_results is None:
-        print("Search failed. Exiting.")
-        return
-
-    # Extract URLs from search results
-    urls = [result['link'] for result in search_results]
-
-    # Initialize an empty list to hold all the scraped data
-    all_product_details = []
-
-    # Counter for the number of products with image URLs
-    product_count_with_images = 0
-
-    # Create a dictionary for easy lookup of search result items by URL
-    search_results_dict = {result['link']: result for result in search_results}
+    # try:
+    if (is_valid_json):
+        save_to_airtable(remove_duplicate_json(
+            actual_content), query, unique_id)
+    else:
+        print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
+        long_running_task(query, unique_id, max_attempts=max_attempts - 1)
+    # except Exception as e:
+    #     print(f"An error occurred: {e}")
 
 
-   # Step 2: Loop through each URL to scrape data.
-    for url in urls:
-        product_details = asyncio.run(
-            scrape_website('Scrape product details', url))
-        
-         # Include search result data if available
-        search_result_item = search_results_dict.get(url, {})
-        price = search_result_item.get('price', 'N/A')
-        snippet = search_result_item.get('snippet', 'N/A')
-
-        if isinstance(product_details, dict):
-            # Check if the product has an image URL
-            if product_details.get('Images') and product_details['Images'][0].get('url').strip() not in ["", "N/A"]:
-                product_details['Price'] = str(price)
-                product_details['Description'] = snippet
-                
-                all_product_details.append(product_details)
-                product_count_with_images += 1
-
-                # Stop if we've gathered 10 products with image URLs
-                if product_count_with_images >= 10:
-                    break
-        else:
-            print("Warning: product_details is not a dictionary", type(product_details))
-            print("product details: ", product_details)
-
-    actual_content = all_product_details
-
-    try:
-        if (is_valid_json):
-            save_to_airtable(remove_duplicate_json(
-                actual_content), query, unique_id)
-        else:
-            print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
-            long_running_task(query, unique_id, max_attempts=max_attempts - 1)
-    except Exception as e:
-        print(f"An error occurred: {e}")
+@app.post("/v2")
+def researchAgent(query: Query):
+    query = query.query
+    content = agent({"input": query})
+    actual_content = content['output']
+    return remove_duplicate_json(actual_content)
 
 
 @app.post("/")
@@ -423,40 +346,87 @@ def researchAgentV2(query: Query):
     return {"message": "Request is being processed", "id": unique_id}
 
 
-def save_to_airtable(all_product_details, category, unique_id):
-    API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
+def remove_duplicate_json(json_str):
 
-    print("SAVING RECORDS TO AIRTABLE . . .")
+    # Split the string by the delimiter '}{'
+    if "}\n{" in json_str:
+        json_list = json_str.split("}\n{")
+        return json_list[0] + "}"
+
+    return json_str
+
+
+def is_valid_json(json_str):
+    try:
+        json.loads(json_str)
+        return True
+    except JSONDecodeError:
+        return False
+
+
+def save_to_airtable(json_str, category, unique_id):
+    API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
+    API_KEY = "patCKWLwcI38V3ls7.80c84f95c7b36e4cb14bc0453b22445f043bfbfef5f4a2c88c7d113a4921b56f"
+    print("savetoairtale")
     headers = {
-        "Authorization": f"Bearer {airtable_key}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
 
+    # Parse the JSON string to a Python object
+    parsed_json = json.loads(json_str)
+
     # Initialize an empty list to hold the data dictionaries
     data_list = []
+    # unique_id = str(uuid.uuid4())
 
     # Loop through all items in the parsed_json
-    for item in all_product_details:
+    for item in parsed_json['items']:
         data_dict = {
             "fields": {
-                "Product Name": item.get('sp_name'),
-                "Source": item['Buy Link'],
+                "Product Name": item['name'],
+                "Source": item['source'],
                 "Category": category,
+                "Price": item['price'],
+                "What We Like": item['what_we_like'],
+                "Description": item['description'],
+                "Best For": item['best_for'],
+                "In the box": item['in_the_box'],
                 "batch_id": unique_id
             }
         }
         # Append the data_dict to the data_list
         data_list.append(data_dict)
-        data_dict['fields'].update(item)
 
-    response = requests.post(API_URL, headers=headers, json={
-                                "records": data_list})
-    if response.status_code != 200:
-        print(f"Failed to add record: {response.content}")
+        product_details = asyncio.run(scrape_website(
+            "Scrape product details", item['source']))
+        print("product_details", product_details)
+
+        if isinstance(product_details, dict):
+            if (product_details.get('sp_name') != "N/A"):
+                data_dict['fields'].update(product_details)
+        else:
+            print("Warning: product_details is not a dictionary. Skipping update.")
+
+        if len(data_list) >= 10:
+            response = requests.post(API_URL, headers=headers, json={
+                                     "records": data_list})
+            if response.status_code != 200:
+                print(f"Failed to add record: {response.content}")
+            data_list.clear()  # Clear the list for the next batch
+
+    print("new json %s", json.dumps(data_list))
+
+    # Send any remaining records that are less than 10
+    if len(data_list) > 0:
+        response = requests.post(API_URL, headers=headers, json={
+                                 "records": data_list})
+        if response.status_code != 200:
+            print(f"Failed to add record: {response.content}")
 
     if response.status_code == 200:
 
-        # Create nre record with batch_id in Generate Content Table
+        # Create record in Generate Content Table
         API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Generated%20Articles"
 
         data = {
@@ -466,7 +436,7 @@ def save_to_airtable(all_product_details, category, unique_id):
 
         requests.post(API_URL, headers=headers, json=data)
 
-        # Execute Generation of Artile Scenario in Make
+        # Create record in Generate Content Table
         API_URL = "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
 
         data = {

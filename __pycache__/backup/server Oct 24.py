@@ -57,7 +57,6 @@ def clean_text(text):
 
     return text
 
-
 def is_valid_url(url):
 
     try:
@@ -74,7 +73,6 @@ def is_valid_url(url):
         print(f"An error occurred: {e}")
         return ""
 
-
 def remove_duplicate_json(json_str):
 
     # Split the string by the delimiter '}{'
@@ -84,13 +82,13 @@ def remove_duplicate_json(json_str):
 
     return json_str
 
-
 def is_valid_json(json_str):
     try:
         json.loads(json_str)
         return True
     except JSONDecodeError:
         return False
+
 
 
 # 1. Tool for search
@@ -102,24 +100,21 @@ def calculate_similarity(text1, text2):
     similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
     return similarity
 
-
 def filter_similar_products(product_list, threshold=0.35):
     filtered_products = []
     for i, product1 in enumerate(product_list):
         is_similar = False
         for j, product2 in enumerate(filtered_products):
-            similarity = calculate_similarity(
-                product1['title'], product2['title'])
+            similarity = calculate_similarity(product1['title'], product2['title'])
             # print(f"Comparing: {product1['title']} AND {product2['title']}. Similarity: {similarity}")
             if similarity > threshold:
                 is_similar = True
-                # print(f"Products are similar. Skipping: {product1['title']}")
+                print(f"Products are similar. Skipping: {product1['title']}")
                 break
         if not is_similar:
             filtered_products.append(product1)
-            # print(f"Adding product: {product1['title']}")
+            print(f"Adding product: {product1['title']}")
     return filtered_products
-
 
 def search(query):
     url = "https://google.serper.dev/search"
@@ -148,23 +143,21 @@ def search(query):
 
         print(
             f"Successfully fetched {len(amazon_results)} Amazon results.")
-
-        # Filter out similar products
+        
+         # Filter out similar products
         unique_amazon_results = filter_similar_products(amazon_results)
-
+        
         print(
             f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
-
+        
         return unique_amazon_results
 
     except requests.RequestException as e:
         logging.error(f"Failed to fetch search results: {e}")
         return None
 
-
-# print(search("Best Pregnancy Pillows"))
+print(search("Best Pregnancy Pillows"))
 # 2. Tool for scraping
-
 
 async def scrape_website(objective: str, url: str):
     print("Start Scraping")
@@ -286,7 +279,6 @@ class ScrapeWebsiteTool(BaseTool):
     def _arun(self, url: str):
         raise NotImplementedError("error here")
 
-
 # 3. Create langchain agent with the tools above
 tools = [
     Tool(
@@ -353,63 +345,18 @@ def long_running_task(query, unique_id, max_attempts=3):
         print("Maximum attempts reached. Could not get valid JSON.")
         return
 
-    # content = agent({"input": "Top 10 " + query})
-    search_results = search(query)
+    content = agent({"input": "Top 10 " + query})
+    actual_content = content['output']
 
-    if search_results is None:
-        print("Search failed. Exiting.")
-        return
-
-    # Extract URLs from search results
-    urls = [result['link'] for result in search_results]
-
-    # Initialize an empty list to hold all the scraped data
-    all_product_details = []
-
-    # Counter for the number of products with image URLs
-    product_count_with_images = 0
-
-    # Create a dictionary for easy lookup of search result items by URL
-    search_results_dict = {result['link']: result for result in search_results}
-
-
-   # Step 2: Loop through each URL to scrape data.
-    for url in urls:
-        product_details = asyncio.run(
-            scrape_website('Scrape product details', url))
-        
-         # Include search result data if available
-        search_result_item = search_results_dict.get(url, {})
-        price = search_result_item.get('price', 'N/A')
-        snippet = search_result_item.get('snippet', 'N/A')
-
-        if isinstance(product_details, dict):
-            # Check if the product has an image URL
-            if product_details.get('Images') and product_details['Images'][0].get('url').strip() not in ["", "N/A"]:
-                product_details['Price'] = str(price)
-                product_details['Description'] = snippet
-                
-                all_product_details.append(product_details)
-                product_count_with_images += 1
-
-                # Stop if we've gathered 10 products with image URLs
-                if product_count_with_images >= 10:
-                    break
-        else:
-            print("Warning: product_details is not a dictionary", type(product_details))
-            print("product details: ", product_details)
-
-    actual_content = all_product_details
-
-    try:
-        if (is_valid_json):
-            save_to_airtable(remove_duplicate_json(
-                actual_content), query, unique_id)
-        else:
-            print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
-            long_running_task(query, unique_id, max_attempts=max_attempts - 1)
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    # try:
+    if (is_valid_json):
+        save_to_airtable(remove_duplicate_json(
+            actual_content), query, unique_id)
+    else:
+        print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
+        long_running_task(query, unique_id, max_attempts=max_attempts - 1)
+    # except Exception as e:
+    #     print(f"An error occurred: {e}")
 
 
 @app.post("/")
@@ -423,7 +370,7 @@ def researchAgentV2(query: Query):
     return {"message": "Request is being processed", "id": unique_id}
 
 
-def save_to_airtable(all_product_details, category, unique_id):
+def save_to_airtable(json_str, category, unique_id):
     API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
 
     print("SAVING RECORDS TO AIRTABLE . . .")
@@ -432,27 +379,54 @@ def save_to_airtable(all_product_details, category, unique_id):
         "Content-Type": "application/json"
     }
 
+    # Parse the JSON string to a Python object
+    parsed_json = json.loads(json_str)
+
     # Initialize an empty list to hold the data dictionaries
     data_list = []
 
     # Loop through all items in the parsed_json
-    for item in all_product_details:
+    for item in parsed_json['items']:
         data_dict = {
             "fields": {
-                "Product Name": item.get('sp_name'),
-                "Source": item['Buy Link'],
+                "Product Name": item['name'],
+                "Source": item['source'],
                 "Category": category,
+                "Price": item['price'],
+                "What We Like": item['what_we_like'],
+                "Description": item['description'],
+                "Best For": item['best_for'],
+                "In the box": item['in_the_box'],
                 "batch_id": unique_id
             }
         }
         # Append the data_dict to the data_list
         data_list.append(data_dict)
-        data_dict['fields'].update(item)
 
-    response = requests.post(API_URL, headers=headers, json={
-                                "records": data_list})
-    if response.status_code != 200:
-        print(f"Failed to add record: {response.content}")
+        product_details = asyncio.run(scrape_website("Scrape product details", item['source']))
+        print("product_details", product_details)
+
+        if isinstance(product_details, dict):
+            if (product_details.get('sp_name') != "N/A"):
+                data_dict['fields'].update(product_details)
+        else:
+            print("Warning: product_details is not a dictionary. Skipping update.")
+
+        if len(data_list) == 10:
+            response = requests.post(API_URL, headers=headers, json={
+                                     "records": data_list})
+            if response.status_code != 200:
+                print(f"Failed to add record: {response.content}")
+            data_list.clear()  # Clear the list for the next batch
+
+    print("new json %s", json.dumps(data_list))
+
+    # Send any remaining records that are less than 10
+    if len(data_list) > 0:
+        response = requests.post(API_URL, headers=headers, json={
+                                 "records": data_list})
+        if response.status_code != 200:
+            print(f"Failed to add record: {response.content}")
 
     if response.status_code == 200:
 
@@ -466,14 +440,14 @@ def save_to_airtable(all_product_details, category, unique_id):
 
         requests.post(API_URL, headers=headers, json=data)
 
-        # Execute Generation of Artile Scenario in Make
-        API_URL = "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
+        # # Execute Generation of Artile Scenario in Make
+        # API_URL = "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
 
-        data = {
-            "batch_id": unique_id
-        }
+        # data = {
+        #     "batch_id": unique_id
+        # }
 
-        requests.get(API_URL, json=data)
+        # requests.get(API_URL, json=data)
 
         print("Record successfully added.")
     else:
