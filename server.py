@@ -28,7 +28,7 @@ from json import JSONDecodeError
 import random
 import time
 import asyncio
-from pyppeteer import connect
+from pyppeteer import connect, errors
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -372,13 +372,12 @@ def long_running_task(query, unique_id, max_attempts=3):
     # Create a dictionary for easy lookup of search result items by URL
     search_results_dict = {result['link']: result for result in search_results}
 
-
    # Step 2: Loop through each URL to scrape data.
     for url in urls:
         product_details = asyncio.run(
             scrape_website('Scrape product details', url))
-        
-         # Include search result data if available
+
+        # Include search result data if available
         search_result_item = search_results_dict.get(url, {})
         price = search_result_item.get('price', 'N/A')
         snippet = search_result_item.get('snippet', 'N/A')
@@ -388,7 +387,7 @@ def long_running_task(query, unique_id, max_attempts=3):
             if product_details.get('Images') and product_details['Images'][0].get('url').strip() not in ["", "N/A"]:
                 product_details['Price'] = str(price)
                 product_details['Description'] = snippet
-                
+
                 all_product_details.append(product_details)
                 product_count_with_images += 1
 
@@ -396,7 +395,8 @@ def long_running_task(query, unique_id, max_attempts=3):
                 if product_count_with_images >= 10:
                     break
         else:
-            print("Warning: product_details is not a dictionary", type(product_details))
+            print("Warning: product_details is not a dictionary",
+                  type(product_details))
             print("product details: ", product_details)
 
     actual_content = all_product_details
@@ -450,7 +450,7 @@ def save_to_airtable(all_product_details, category, unique_id):
         data_dict['fields'].update(item)
 
     response = requests.post(API_URL, headers=headers, json={
-                                "records": data_list})
+        "records": data_list})
     if response.status_code != 200:
         print(f"Failed to add record: {response.content}")
 
