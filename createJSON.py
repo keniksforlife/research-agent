@@ -29,6 +29,14 @@ def generate_unique_filename(batch_id, article_title):
     
     return unique_filename
 
+def extract_section(title, text):
+    if f"{title}:" in text:
+        cleaned_text = text.replace(f"{title}:", "").strip()
+    elif f"{title}" in text:
+        cleaned_text = text.replace(f"{title}", "").strip()
+    else:
+        cleaned_text = text.strip()
+    return clean_text(cleaned_text)
 
 def transform_product_data(input_json_file, output_json_file):
    # Read the original JSON file
@@ -71,25 +79,35 @@ def transform_product_data(input_json_file, output_json_file):
         review_section = {}
 
         review_section['ProductTitle'] = product.get('Short Product Name', '')
-        review_section['BuyLink'] = product.get('Buy Link', '')
-        review_section['Price'] = product.get('Price', '')
+        review_section['BuyLink'] = product.get('Buy Link', '') + "|Buy Now From Amazon"
+        price = product.get('Price', '')
+        if price != "N/A":
+            try:
+                price = float(price)
+                review_section['Price'] = "${:,.2f}".format(price)
+            except ValueError:
+                review_section['Price'] = price
+
         
         long_description = product.get('Long Description', '')
-        sections = long_description.split('#### ')
+        
+        sections = re.split(r'####\s*', long_description)
+
+        if product.get('Short Product Name', '') == "Peg Perego Duette Piroet Stroller":
+            print(long_description)
+            print("-")
+            print(sections)
 
         for section in sections:
-            if "Our Review:" in section:
-                review_section['ReviewOverview'] = clean_text(
-                    section.replace("Our Review:", "").strip())
-            elif "What We Like:" in section:
-                review_section['WhatWeLike'] = clean_text(
-                    section.replace("What We Like:", "").strip())
-            elif "What's in the Box:" in section:
-                review_section['WhatsInTheBox'] = clean_text(
-                    section.replace("What's in the Box:", "").strip())
-            elif "Additional Information:" in section:
-                review_section['UsefulProductInfo'] = clean_text(
-                    section.replace("Additional Information:", "").strip())
+            if "Our Review" in section:
+                review_section['ReviewOverview'] = extract_section("Our Review", section)
+            elif "What We Like" in section:
+                review_section['WhatWeLike'] = extract_section("What We Like", section)
+            elif "What's in the Box" in section:
+                review_section['WhatsInTheBox'] = extract_section("What's in the Box", section)
+            elif "Additional Information" in section:
+                review_section['UsefulProductInfo'] = extract_section("Additional Information", section)
+
                 
 
         unique_filename = generate_unique_filename(data[0].get('Article ID', ''), product.get('Short Product Name', ''))
