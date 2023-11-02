@@ -31,6 +31,9 @@ import asyncio
 from pyppeteer import connect, errors
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from createJSON import transform_product_data
+from io import StringIO
+from typing import List, Dict, Any
 
 
 load_dotenv()
@@ -48,6 +51,9 @@ user_agents = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
 ]
+
+class ProductData(BaseModel):
+    input_json: List[Dict[str, Any]] = Field(..., example=[{"Products": [], "Article Title": "The Best Prams of 2023", "Article ID": "recEDOOL9KxHsnHOl"}])
 
 
 # HELPER FUNCTIONS
@@ -199,6 +205,7 @@ async def scrape_website(objective: str, url: str):
     content = await page.content()
     soup = BeautifulSoup(content, "html.parser")
 
+    print(soup)
     try:
         name_elem = soup.select_one('span.product-title-word-break')
         price_elem = soup.select_one(
@@ -265,6 +272,7 @@ async def scrape_website(objective: str, url: str):
 
     await browser.close()
 
+# asyncio.run(scrape_website("Best Moisturizers for dry skin","https://www.amazon.com/Cetaphil-DailyAdvance-Hydrating-Lotion-Sensitive/dp/B00EZWUHAM"))
 
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
@@ -421,6 +429,26 @@ def researchAgentV2(query: Query):
     thread.start()
 
     return {"message": "Request is being processed", "id": unique_id}
+
+@app.post("/createJSON")
+async def create_json(data: ProductData):
+    # Convert input JSON data to string
+    input_json_str = json.dumps(data.input_json)
+    
+    # Use StringIO to simulate a file-like object for input JSON data
+    input_json_file = StringIO(input_json_str)
+    
+    # Use StringIO to create a file-like object for output JSON data
+    output_json_file = StringIO()
+    
+    # Call the transform_product_data function
+    transform_product_data(input_json_file, output_json_file)
+    
+    # Get the transformed JSON data from the output file-like object
+    output_json_file.seek(0)
+    output_json_data = json.load(output_json_file)
+    
+    return output_json_data
 
 
 def save_to_airtable(all_product_details, category, unique_id):
