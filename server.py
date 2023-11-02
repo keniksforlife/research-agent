@@ -437,7 +437,6 @@ async def create_json(data: ProductData):
     
     # Use StringIO to simulate a file-like object for input JSON data
     input_json_file = StringIO(input_json_str)
-    
     # Use StringIO to create a file-like object for output JSON data
     output_json_file = StringIO()
     

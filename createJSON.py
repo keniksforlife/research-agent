@@ -31,11 +31,20 @@ def generate_unique_filename(batch_id, article_title):
 
 
 def transform_product_data(input_json_file, output_json_file):
-    # Read the original JSON file
+   # Read the original JSON file
    # Load JSON data from input file-like object
     data = json.load(input_json_file)
     
-    parsed_data = data[0]['Products']
+    # Parse the JSON string in the 'Products' field
+    products_json_str = data[0]['Products']
+    if isinstance(products_json_str, str):
+        parsed_data = json.loads(products_json_str)
+    else:
+        parsed_data = products_json_str
+
+    # Check if parsed_data is a list with a single string element
+    if isinstance(parsed_data, list) and len(parsed_data) == 1 and isinstance(parsed_data[0], str):
+        parsed_data = json.loads(parsed_data[0])  # Parse the string again
 
     # Initialize the transformed data with the specific structure
     transformed_data = {
@@ -55,6 +64,7 @@ def transform_product_data(input_json_file, output_json_file):
     }]
     transformed_data['ReviewHighlightTitle'] = data[0].get('Article Title', '')
 
+    print("parse data")
 
     # Mapping for the "ReviewSection"
     for product in parsed_data:
