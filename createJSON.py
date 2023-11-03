@@ -14,6 +14,9 @@ def clean_text(text):
     
     # Remove consecutive newlines and spaces surrounding them
     text = re.sub(r'\n\s*\n', '\n', text)
+
+    # Remove trailing commas
+    text = re.sub(r',\s*$', '', text)
     
     return text
 
@@ -29,14 +32,19 @@ def generate_unique_filename(batch_id, article_title):
     
     return unique_filename
 
-def extract_section(title, text):
+def extract_section(title, text, max_length=None):
     if f"{title}:" in text:
         cleaned_text = text.replace(f"{title}:", "").strip()
     elif f"{title}" in text:
         cleaned_text = text.replace(f"{title}", "").strip()
     else:
         cleaned_text = text.strip()
-    return clean_text(cleaned_text)
+    cleaned_text = clean_text(cleaned_text)
+    if max_length is not None:
+        lines = cleaned_text.split('\n')
+        lines = [line for line in lines if len(line) <= max_length]
+        cleaned_text = '\n'.join(lines)
+    return cleaned_text
 
 def transform_product_data(input_json_file, output_json_file):
    # Read the original JSON file
@@ -93,11 +101,6 @@ def transform_product_data(input_json_file, output_json_file):
         
         sections = re.split(r'####\s*', long_description)
 
-        if product.get('Short Product Name', '') == "Peg Perego Duette Piroet Stroller":
-            print(long_description)
-            print("-")
-            print(sections)
-
         for section in sections:
             if "Our Review" in section:
                 review_section['ReviewOverview'] = extract_section("Our Review", section)
@@ -106,7 +109,7 @@ def transform_product_data(input_json_file, output_json_file):
             elif "What's in the Box" in section:
                 review_section['WhatsInTheBox'] = extract_section("What's in the Box", section)
             elif "Additional Information" in section:
-                review_section['UsefulProductInfo'] = extract_section("Additional Information", section)
+                review_section['UsefulProductInfo'] = extract_section("Additional Information", section,115)
 
                 
 
