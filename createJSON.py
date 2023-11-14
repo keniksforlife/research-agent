@@ -87,7 +87,7 @@ def transform_product_data(input_json_file, output_json_file):
         review_section = {}
 
         review_section['ProductTitle'] = product.get('Short Product Name', '')
-        review_section['BuyLink'] = product.get('Buy Link', '') + "|Buy Now From Amazon"
+        review_section['BuyLink'] = product.get('Buy Link', '') + "?tag=wwwfanfinde08-20|Buy Now From Amazon"
         price = product.get('Price', '')
         if price != "N/A":
             try:
