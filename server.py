@@ -21,7 +21,7 @@ from langchain.schema import SystemMessage
 from fastapi import FastAPI
 from threading import Thread
 import streamlit as st
-from openai.error import InvalidRequestError
+# from openai.error import InvalidRequestError
 import uuid
 from urllib.parse import urlparse
 from json import JSONDecodeError
