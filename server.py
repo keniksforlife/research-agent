@@ -28,7 +28,8 @@ from json import JSONDecodeError
 import random
 import time
 import asyncio
-from pyppeteer import connect, errors
+import pyppeteer
+# from pyppeteer import connect, errors
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from createJSON import transform_product_data
@@ -175,7 +176,7 @@ def search(query):
 async def scrape_website(objective: str, url: str):
     print("Start Scraping")
     # Connect to Browserless.io
-    browser = await connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
+    browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
 
     # Create a new page
     page = await browser.newPage()
