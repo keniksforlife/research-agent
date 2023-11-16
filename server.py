@@ -246,9 +246,12 @@ async def scrape_website(objective: str, url: str):
     try: 
         print("Start Scraping")
         # Connect to Browserless.io
-        browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
+        # browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
 
-        # Create a new page
+        # # Create a new page
+        # page = await browser.newPage()
+
+        browser = await pyppeteer.launch(headless=True, args=['--no-sandbox', '--disable-gpu'])
         page = await browser.newPage()
 
         # Randomly select a User-Agent
@@ -291,6 +294,14 @@ async def scrape_website(objective: str, url: str):
                     await page.type('#captchacharacters', captcha_solution)
                     await page.click('button[type="submit"]')
                     print('captcha submitted')
+                    try:
+                        # Wait for navigation to complete
+                        await page.waitForNavigation(timeout=10000)  # Timeout in milliseconds
+
+                    except pyppeteer.errors.TimeoutError:
+                        logging.error("Navigation timeout after CAPTCHA submission.")
+                        # Handle timeout
+                        return "Navigation timeout occurred."
                 else:
                     print("Captcha solution is not available or is invalid.")
         except pyppeteer.errors.NetworkError as e:
@@ -314,7 +325,7 @@ async def scrape_website(objective: str, url: str):
         content = await page.content()
         soup = BeautifulSoup(content, "html.parser")
 
-        print(soup)
+        # print(soup)
         try:
             name_elem = soup.select_one('span.product-title-word-break')
             price_elem = soup.select_one(
@@ -397,7 +408,7 @@ async def scrape_website(objective: str, url: str):
     finally:
         await browser.close()
 
-# asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
+asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
 
 # 5. Set this as an API endpoint via FastAPI
