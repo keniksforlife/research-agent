@@ -406,7 +406,8 @@ async def scrape_website(objective: str, url: str):
         return "An unexpected error occurred."
 
     finally:
-        await browser.close()
+       if browser:
+            await browser.close()  # Close the browser only if it's not None
 
 # asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
