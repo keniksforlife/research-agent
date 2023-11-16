@@ -35,6 +35,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from createJSON import transform_product_data
 from io import StringIO
 from typing import List, Dict, Any
+import base64
+import time
 
 
 load_dotenv()
@@ -51,7 +53,21 @@ user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:104.0) Gecko/20100101 Firefox/104.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:103.0) Gecko/20100101 Firefox/103.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Edge/109.0.0.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Edge/108.0.0.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 12; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 11; Pixel 4 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 OPR/85.0.4341.75",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15 OPR/85.0.4341.75"
 ]
+
 
 class ProductData(BaseModel):
     input_json: List[Dict[str, Any]] = Field(..., example=[{"Products": [], "Article Title": "The Best Prams of 2023", "Article ID": "recEDOOL9KxHsnHOl"}])
@@ -172,6 +188,56 @@ def search(query):
 # print(search("Best Pregnancy Pillows"))
 # 2. Tool for scraping
 
+# Function to save cookies to a file
+async def save_cookies(cookies, path="cookies.json"):
+    with open(path, "w") as file:
+        json.dump(cookies, file)
+
+# Function to load cookies from a file
+async def load_cookies(path="cookies.json"):
+    try:
+        with open(path, "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return None  # No cookies file found
+    
+api_key = '0fc58242b7ce53ffe32fb48490d580af'
+
+def solve_captcha(captcha_image_url):
+    # Download the image from the URL
+    response = requests.get(captcha_image_url)
+    print(captcha_image_url)
+    if response.status_code == 200:
+        # Convert the image to a base64-encoded string
+        encoded_image = base64.b64encode(response.content).decode('utf-8')
+        print(response.content)
+        # Send CAPTCHA for solving
+        data = {
+            'key': api_key,
+            'method': 'base64',
+            'body': encoded_image,  # Base64 encoded image
+            'json': 1
+        }
+        response = requests.post('http://2captcha.com/in.php', data=data)
+        request_id = response.json()['request']
+
+        # Poll for the solved CAPTCHA
+        for i in range(10):
+            time.sleep(5)  # Wait for 5 seconds before each check
+            result = requests.get(f'http://2captcha.com/res.php?key={api_key}&action=get&id={request_id}&json=1')
+            if result.json()['status'] == 1:
+                # CAPTCHA Solved
+                return result.json()['request']
+    else:
+        print(f"Failed to download CAPTCHA image: HTTP {response.status_code}")
+    return None
+
+# Example usage
+# captcha_solution = solve_captcha("https://images-na.ssl-images-amazon.com/captcha/twhhswbk/Captcha_ysxgzjhfwo.jpg", api_key)
+# if captcha_solution:
+#     print("CAPTCHA Solved:", captcha_solution)
+# else:
+#     print("Failed to solve CAPTCHA")
 
 async def scrape_website(objective: str, url: str):
     print("Start Scraping")
@@ -187,12 +253,49 @@ async def scrape_website(objective: str, url: str):
     # Set User-Agent
     await page.setUserAgent(selected_user_agent)
 
+    # Load cookies from file and set them if they exist
+    cookies = await load_cookies()
+    if cookies:
+        await page.setCookie(*cookies)
+
     # Navigate to the URL
     await page.goto(url)
     print("Visited: ", url)
 
+    # Retrieve and save cookies
+    cookies = await page.cookies()
+    await save_cookies(cookies)
+
+    # Check if CAPTCHA is present
+    print("Checking Captcha")
+
+    try:
+        await asyncio.sleep(5)
+
+        captcha_image = await page.querySelector('img[src*="captcha"]')
+        print(captcha_image)
+        if captcha_image:
+            print("Solving the captcha ...")
+            captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
+            
+            # Solve CAPTCHA
+            captcha_solution = solve_captcha(captcha_image_url)
+            print("captcha status", captcha_solution)
+            
+            # Input the solution and submit the form
+            if captcha_solution is not None and captcha_solution != "":
+                await page.type('#captchacharacters', captcha_solution)
+                await page.click('button[type="submit"]')
+            else:
+                print("Captcha solution is not available or is invalid.")
+    except pyppeteer.errors.NetworkError as e:
+        print(f"No Captcha: {e}")
+    
+    
+       
+
     # Random sleep to mimic user reading page
-    await asyncio.sleep(random.uniform(3, 7))
+    await asyncio.sleep(random.uniform(3, 15))
 
     try:
         await page.mouse.move(random.randint(0, 500), random.randint(0, 500))
@@ -273,7 +376,7 @@ async def scrape_website(objective: str, url: str):
 
     await browser.close()
 
-# asyncio.run(scrape_website("Best Moisturizers for dry skin","https://www.amazon.com/Cetaphil-DailyAdvance-Hydrating-Lotion-Sensitive/dp/B00EZWUHAM"))
+# asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
