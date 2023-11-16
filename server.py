@@ -242,29 +242,32 @@ def solve_captcha(captcha_image_url):
 #     print("Failed to solve CAPTCHA")
 
 async def scrape_website(objective: str, url: str):
-    browser = None  # Initialize browser to None
+
     try: 
         print("Start Scraping")
         # Connect to Browserless.io
-        # browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
-
-        # # Create a new page
-        # page = await browser.newPage()
-
-        browser = await pyppeteer.launch(headless=True, args=['--no-sandbox', '--disable-gpu'])
+        browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
+        print('new page')
+        # Create a new page
         page = await browser.newPage()
+
+        # browser = await pyppeteer.launch(headless=True, args=['--no-sandbox', '--disable-gpu'])
+        # page = await browser.newPage()
 
         # Randomly select a User-Agent
         selected_user_agent = random.choice(user_agents)
 
         # Set User-Agent
+        print('set useragent')
         await page.setUserAgent(selected_user_agent)
-
+        
+        print('load coockies')
         # Load cookies from file and set them if they exist
         cookies = await load_cookies()
         if cookies:
             await page.setCookie(*cookies)
 
+        print('navigating', url)
         # Navigate to the URL
         await page.goto(url)
         print("Visited: ", url)
@@ -296,12 +299,12 @@ async def scrape_website(objective: str, url: str):
                     print('captcha submitted')
                     try:
                         # Wait for navigation to complete
-                        await page.waitForNavigation(timeout=10000)  # Timeout in milliseconds
+                        await page.waitForNavigation()  # Timeout in milliseconds
 
                     except pyppeteer.errors.TimeoutError:
                         logging.error("Navigation timeout after CAPTCHA submission.")
                         # Handle timeout
-                        return "Navigation timeout occurred."
+                        # return "Navigation timeout occurred."
                 else:
                     print("Captcha solution is not available or is invalid.")
         except pyppeteer.errors.NetworkError as e:
@@ -325,7 +328,6 @@ async def scrape_website(objective: str, url: str):
         content = await page.content()
         soup = BeautifulSoup(content, "html.parser")
 
-        # print(soup)
         try:
             name_elem = soup.select_one('span.product-title-word-break')
             price_elem = soup.select_one(
@@ -406,7 +408,6 @@ async def scrape_website(objective: str, url: str):
         return "An unexpected error occurred."
 
     finally:
-       if browser:
         try:
             await browser.close()  # Ensure this is awaited
         except Exception as e:
