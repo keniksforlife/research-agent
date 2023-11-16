@@ -209,8 +209,8 @@ def solve_captcha(captcha_image_url):
     print(captcha_image_url)
     if response.status_code == 200:
         # Convert the image to a base64-encoded string
+        print("convertng image url to base64")
         encoded_image = base64.b64encode(response.content).decode('utf-8')
-        print(response.content)
         # Send CAPTCHA for solving
         data = {
             'key': api_key,
@@ -225,8 +225,10 @@ def solve_captcha(captcha_image_url):
         for i in range(10):
             time.sleep(5)  # Wait for 5 seconds before each check
             result = requests.get(f'http://2captcha.com/res.php?key={api_key}&action=get&id={request_id}&json=1')
+            print('solving ...')
             if result.json()['status'] == 1:
                 # CAPTCHA Solved
+                print('captcha solved')
                 return result.json()['request']
     else:
         print(f"Failed to download CAPTCHA image: HTTP {response.status_code}")
@@ -240,216 +242,162 @@ def solve_captcha(captcha_image_url):
 #     print("Failed to solve CAPTCHA")
 
 async def scrape_website(objective: str, url: str):
-    print("Start Scraping")
-    # Connect to Browserless.io
-    browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
 
-    # Create a new page
-    page = await browser.newPage()
+    try: 
+        print("Start Scraping")
+        # Connect to Browserless.io
+        browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
 
-    # Randomly select a User-Agent
-    selected_user_agent = random.choice(user_agents)
+        # Create a new page
+        page = await browser.newPage()
 
-    # Set User-Agent
-    await page.setUserAgent(selected_user_agent)
+        # Randomly select a User-Agent
+        selected_user_agent = random.choice(user_agents)
 
-    # Load cookies from file and set them if they exist
-    cookies = await load_cookies()
-    if cookies:
-        await page.setCookie(*cookies)
+        # Set User-Agent
+        await page.setUserAgent(selected_user_agent)
 
-    # Navigate to the URL
-    await page.goto(url)
-    print("Visited: ", url)
+        # Load cookies from file and set them if they exist
+        cookies = await load_cookies()
+        if cookies:
+            await page.setCookie(*cookies)
 
-    # Retrieve and save cookies
-    cookies = await page.cookies()
-    await save_cookies(cookies)
+        # Navigate to the URL
+        await page.goto(url)
+        print("Visited: ", url)
 
-    # Check if CAPTCHA is present
-    print("Checking Captcha")
+        # Retrieve and save cookies
+        cookies = await page.cookies()
+        await save_cookies(cookies)
 
-    try:
-        await asyncio.sleep(5)
+        # Check if CAPTCHA is present
+        print("Checking Captcha")
 
-        captcha_image = await page.querySelector('img[src*="captcha"]')
-        print(captcha_image)
-        if captcha_image:
-            print("Solving the captcha ...")
-            captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
-            
-            # Solve CAPTCHA
-            captcha_solution = solve_captcha(captcha_image_url)
-            print("captcha status", captcha_solution)
-            
-            # Input the solution and submit the form
-            if captcha_solution is not None and captcha_solution != "":
-                await page.type('#captchacharacters', captcha_solution)
-                await page.click('button[type="submit"]')
+        try:
+            await asyncio.sleep(5)
+
+            captcha_image = await page.querySelector('img[src*="captcha"]')
+            print(captcha_image)
+            if captcha_image:
+                print("Solving the captcha ...")
+                captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
+                
+                # Solve CAPTCHA
+                captcha_solution = solve_captcha(captcha_image_url)
+                print("captcha status", captcha_solution)
+                
+                # Input the solution and submit the form
+                if captcha_solution is not None and captcha_solution != "":
+                    await page.type('#captchacharacters', captcha_solution)
+                    await page.click('button[type="submit"]')
+                    print('captcha submitted')
+                else:
+                    print("Captcha solution is not available or is invalid.")
+        except pyppeteer.errors.NetworkError as e:
+            print(f"No Captcha: {e}")
+        
+        
+        
+
+        # Random sleep to mimic user reading page
+        await asyncio.sleep(random.uniform(3, 15))
+
+        try:
+            await page.mouse.move(random.randint(0, 500), random.randint(0, 500))
+        except pyppeteer.errors.NetworkError as e:
+            print(f"An error occurred: {e}")
+
+        # Random sleep before next action
+        await asyncio.sleep(random.uniform(2, 5))
+
+        # Scrape content and manipulate as needed
+        content = await page.content()
+        soup = BeautifulSoup(content, "html.parser")
+
+        print(soup)
+        try:
+            name_elem = soup.select_one('span.product-title-word-break')
+            price_elem = soup.select_one(
+                '.reinventPricePriceToPayMargin.priceToPay')
+
+            image_url_elem = soup.select_one('img[data-old-hires]')
+            image_url_elem2 = soup.select_one(
+                '[data-action="main-image-click"] img')
+            details_elem = soup.select_one('div#detailBullets_feature_div')
+            details_elem2 = soup.select_one('div#productDetails_feature_div')
+            details_elem3 = soup.select_one('div#prodDetails')
+            description_elem = soup.select_one('.a-spacing-small p span')
+            about_elem = soup.select_one(
+                'div.a-spacing-medium.a-spacing-top-small')
+
+            # Check for None before accessing attributes
+            name = str(name_elem.text.strip()) if name_elem else "N/A"
+
+            details = clean_text(str(details_elem.text.strip())
+                                ) if details_elem else "N/A"
+            description = str(description_elem.text.strip()
+                            ) if description_elem else "N/A"
+            about = str(about_elem.text.strip()) if about_elem else "N/A"
+            image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
+
+            if (image_url == "N/A"):
+                image_url = clean_text(
+                    str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
+
+            if (details == "N/A"):
+                details = clean_text(
+                    str(details_elem2.text.strip())) if details_elem2 else "N/A"
+
+            if (details == "N/A"):
+                details = clean_text(
+                    str(details_elem3.text.strip())) if details_elem3 else "N/A"
+
+            product_details = {
+                "sp_name": name,
+                "Images": [
+                    {
+                        "url": is_valid_url(image_url)
+                    }
+                ],
+                "Image Link": is_valid_url(image_url),
+                "sp_other_details": details,
+                "sp_description": description,
+                "sp_about": about,
+                "Buy Link": url,
+            }
+
+            print(product_details)
+
+            # Serialize the Python dictionary to a JSON-formatted string
+            # product_details_json = json.dumps(product_details, ensure_ascii=False)
+
+            if (name == "N/A"):
+                return "Not a valid product content. Please find another product."
             else:
-                print("Captcha solution is not available or is invalid.")
+                return product_details
+
+        except AttributeError as e:
+            logging.error(f"Failed to scrape some attributes: {e}")
+
     except pyppeteer.errors.NetworkError as e:
-        print(f"No Captcha: {e}")
-    
-    
-       
+        logging.error(f"NetworkError occurred: {e}")
+        # Handle the network error (e.g., retry, log, exit, etc.)
+        return "Network error occurred."
 
-    # Random sleep to mimic user reading page
-    await asyncio.sleep(random.uniform(3, 15))
+    except pyppeteer.errors.PageError as e:
+        logging.error(f"PageError occurred: {e}")
+        # Handle page errors (e.g., retry, log, exit, etc.)
+        return "Page error occurred."
 
-    try:
-        await page.mouse.move(random.randint(0, 500), random.randint(0, 500))
-    except pyppeteer.errors.NetworkError as e:
-        print(f"An error occurred: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        # Handle other unexpected errors
+        return "An unexpected error occurred."
 
-    # Random sleep before next action
-    await asyncio.sleep(random.uniform(2, 5))
-
-    # Scrape content and manipulate as needed
-    content = await page.content()
-    soup = BeautifulSoup(content, "html.parser")
-
-    print(soup)
-    try:
-        name_elem = soup.select_one('span.product-title-word-break')
-        price_elem = soup.select_one(
-            '.reinventPricePriceToPayMargin.priceToPay')
-
-        image_url_elem = soup.select_one('img[data-old-hires]')
-        image_url_elem2 = soup.select_one(
-            '[data-action="main-image-click"] img')
-        details_elem = soup.select_one('div#detailBullets_feature_div')
-        details_elem2 = soup.select_one('div#productDetails_feature_div')
-        details_elem3 = soup.select_one('div#prodDetails')
-        description_elem = soup.select_one('.a-spacing-small p span')
-        about_elem = soup.select_one(
-            'div.a-spacing-medium.a-spacing-top-small')
-
-        # Check for None before accessing attributes
-        name = str(name_elem.text.strip()) if name_elem else "N/A"
-
-        details = clean_text(str(details_elem.text.strip())
-                             ) if details_elem else "N/A"
-        description = str(description_elem.text.strip()
-                          ) if description_elem else "N/A"
-        about = str(about_elem.text.strip()) if about_elem else "N/A"
-        image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
-
-        if (image_url == "N/A"):
-            image_url = clean_text(
-                str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
-
-        if (details == "N/A"):
-            details = clean_text(
-                str(details_elem2.text.strip())) if details_elem2 else "N/A"
-
-        if (details == "N/A"):
-            details = clean_text(
-                str(details_elem3.text.strip())) if details_elem3 else "N/A"
-
-        product_details = {
-            "sp_name": name,
-            "Images": [
-                {
-                    "url": is_valid_url(image_url)
-                }
-            ],
-            "Image Link": is_valid_url(image_url),
-            "sp_other_details": details,
-            "sp_description": description,
-            "sp_about": about,
-            "Buy Link": url,
-        }
-
-        print(product_details)
-
-        # Serialize the Python dictionary to a JSON-formatted string
-        # product_details_json = json.dumps(product_details, ensure_ascii=False)
-
-        if (name == "N/A"):
-            return "Not a valid product content. Please find another product."
-        else:
-            return product_details
-
-    except AttributeError as e:
-        logging.error(f"Failed to scrape some attributes: {e}")
-
-    await browser.close()
+    finally:
+        await browser.close()
 
 # asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
-
-class ScrapeWebsiteInput(BaseModel):
-    """Inputs for scrape_website"""
-    objective: str = Field(
-        description="The objective & task that users give to the agent")
-    url: str = Field(description="The url of the website to be scraped")
-
-
-class ScrapeWebsiteTool(BaseTool):
-    print("Start ScrapeWebsite Tool")
-    name = "scrape_website"
-    description = "useful when you need to get data from a website url, passing both url and objective to the function; DO NOT make up any url, the url should only be from the search results"
-    args_schema: Type[BaseModel] = ScrapeWebsiteInput
-
-    def _run(self, objective: str, url: str):
-        print("WEBSITE Tool: ", url)
-        return asyncio.run(scrape_website(objective, url))
-
-    def _arun(self, url: str):
-        raise NotImplementedError("error here")
-
-
-# 3. Create langchain agent with the tools above
-tools = [
-    Tool(
-        name="Search",
-        func=search,
-        description="useful for when you need to answer questions about current events, data. You should ask targeted questions"
-    ),
-    ScrapeWebsiteTool(),
-]
-
-system_message = SystemMessage(
-    content="""You are a world-class researcher, focused on gathering detailed and factual information solely from Amazon's website; 
-            you do not make things up, you will strive to gather facts & data to back up the research;
-            
-            Please complete the objective above with the following rules:
-            1/ You should scrape Amazon's website to gather as much information as possible about the top instock 10 best/most popular products in a given category. Please ignore out of stock products
-            2/ Return results that are directly related to the specific category or keyword. Do not include unrelated products.
-            3/ Specifically, gather the direct Amazon URLs of these top 10 individual products. Only return URLs that include '/dp/' in the link, as these are direct product pages. Do not return URLs that lead to category or search result pages.
-            4/ After each scraping iteration, evaluate if additional scraping rounds could improve the quality of your research. Limit this to no more than 3 iterations.
-            5/ Only include facts & data gathered from Amazon's website. Do not make things up.
-            6/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
-            7/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
-            8/ In the final output, include all reference data & direct product links to back up your research. Return the findings in a structured JSON format.
-            9/ The JSON should look like this:
-            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product","in_the_box": "What's included in the box"}]}
-            10/ The JSON should look like this:
-            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "in_the_box": "What's included in the box"}]}
-            11/ The JSON should look like this:
-            {"research_summary": "Summary of the research...", "items": [{"name": "Product Name", "description": "product_description", "source": "Amazon URL", "what_we_like": "List 1-3 points about what makes this product stand out", "best_for": "Type of user or situation", "price": "Price of the product", "in_the_box": "What's included in the box"}]}
-            12/ If the output is not in JSON structured format, please update it and format in a structured JSON using the above template.
-            """
-)
-
-
-agent_kwargs = {
-    "extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")],
-    "system_message": system_message,
-}
-
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
-memory = ConversationSummaryBufferMemory(
-    memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
-
-agent = initialize_agent(
-    tools,
-    llm,
-    agent=AgentType.OPENAI_FUNCTIONS,
-    verbose=True,
-    agent_kwargs=agent_kwargs,
-    memory=memory,
-)
 
 
 # 5. Set this as an API endpoint via FastAPI
