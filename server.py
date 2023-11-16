@@ -242,7 +242,7 @@ def solve_captcha(captcha_image_url):
 #     print("Failed to solve CAPTCHA")
 
 async def scrape_website(objective: str, url: str):
-
+    browser = None  # Initialize browser to None
     try: 
         print("Start Scraping")
         # Connect to Browserless.io
@@ -407,7 +407,10 @@ async def scrape_website(objective: str, url: str):
 
     finally:
        if browser:
-            await browser.close()  # Close the browser only if it's not None
+        try:
+            await browser.close()  # Ensure this is awaited
+        except Exception as e:
+            logging.error(f"Error closing browser: {e}")
 
 # asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
