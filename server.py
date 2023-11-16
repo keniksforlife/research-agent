@@ -408,7 +408,7 @@ async def scrape_website(objective: str, url: str):
     finally:
         await browser.close()
 
-asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
+# asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
 
 # 5. Set this as an API endpoint via FastAPI
