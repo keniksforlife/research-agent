@@ -473,7 +473,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
                 product_count_with_images += 1
 
                 # Stop if we've gathered 10 products with image URLs
-                if product_count_with_images >= 2:
+                if product_count_with_images >= 10:
                     break
         else:
             print("Warning: product_details is not a dictionary")
