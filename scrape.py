@@ -1,234 +1,242 @@
-import os
-from dotenv import load_dotenv
-
-from langchain import PromptTemplate
-from langchain.agents import initialize_agent, Tool
-from langchain.agents import AgentType
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import MessagesPlaceholder
-from langchain.memory import ConversationSummaryBufferMemory
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.summarize import load_summarize_chain
-from langchain.tools import BaseTool
-from pydantic import BaseModel, Field
-from typing import Type
-from bs4 import BeautifulSoup
 import requests
+import xml.etree.ElementTree as ET
+import re
+from bs4 import BeautifulSoup
 import json
-from langchain.schema import SystemMessage
-from fastapi import FastAPI
-import streamlit as st
+import spacy
+import openai
 
-load_dotenv()
-brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
-serper_api_key = os.getenv("SERP_API_KEY")
+# Load the spaCy model
+nlp = spacy.load('en_core_web_md')
 
-# 1. Tool for search
-
-
-def search(query):
-    url = "https://google.serper.dev/search"
-
-    payload = json.dumps({
-        "q": query
-    })
-
-    headers = {
-        'X-API-KEY': serper_api_key,
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.request("POST", url, headers=headers, data=payload)
-
-    print(response.text)
-
-    return response.text
+def save_to_json(data, filename):
+    """Save the scraped data to a JSON file."""
+    try:
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=4)
+    except IOError as e:
+        print(f"Error saving data to {filename}: {e}")
 
 
-# 2. Tool for scraping
-def scrape_website(objective: str, url: str):
-    # scrape website, and also will summarize the content based on objective if the content is too large
-    # objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
+def fetch_robots_txt(url):
+    try:
+        response = requests.get(url + "/robots.txt")
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        print(f"Error fetching robots.txt: {e}")
+        return None
 
-    print("Scraping website...")
-    # Define the headers for the request
-    headers = {
-        'Cache-Control': 'no-cache',
-        'Content-Type': 'application/json',
-    }
+def find_sitemap_url(robots_txt_content):
+    for line in robots_txt_content.splitlines():
+        if line.startswith('Sitemap:'):
+            return line.split(': ')[1].strip()
+    return None
 
-    # Define the data to be sent in the request
-    data = {
-        "url": url
-    }
+def fetch_xml_content(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.content
+    except requests.RequestException as e:
+        print(f"Error fetching XML content from {url}: {e}")
+        return None
 
-    # Convert Python object to JSON string
-    data_json = json.dumps(data)
+def filter_urls(urls, exclude_pattern):
+    """Filter URLs based on the exclude pattern."""
+    filtered_urls = [url for url in urls if not re.search(exclude_pattern, url)]
+    return filtered_urls
 
-    # Send the POST request
-    post_url = f"https://chrome.browserless.io/content?token={brwoserless_api_key}"
-    response = requests.post(post_url, headers=headers, data=data_json)
+def scrape_page_content(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
 
-    # Check the response status code
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.content, "html.parser")
-        text = soup.get_text()
-        print("CONTENTTTTTT:", text)
+        # Parse the content with BeautifulSoup
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Extract text from paragraph tags
+        paragraphs = soup.find_all('p')
+        text_content = [para.get_text() for para in paragraphs]
 
-        if len(text) > 10000:
-            output = summary(objective, text)
-            return output
-        else:
-            return text
-    else:
-        print(f"HTTP request failed with status code {response.status_code}")
-
-print("site scraping", scrape_website("","https://blinkforhome.com"))
-
-def count_tokens_simple(text):
-    return len(text.split())
-
-def truncate_to_max_tokens(text, max_tokens):
-    tokens = text.split()
-    if len(tokens) > max_tokens:
-        return ' '.join(tokens[:max_tokens])
-    else:
-        return text
-
-def summary(objective, content):
-
-    MAX_TOKENS = 16385  # The maximum tokens for the model you're using
-    TOKENS_RESERVED_FOR_OBJECTIVE = 50  # An estimate of how many tokens the objective and other text might consume
-
-
-
-    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+        return text_content
+    except requests.RequestException as e:
+        print(f"Error fetching page {url}: {e}")
+        return None
     
-    token_count = count_tokens_simple(content)
+def parse_sitemap(sitemap_content, include_pattern=None, exclude_pattern=None):
+    try:
+        root = ET.fromstring(sitemap_content)
+        namespaces = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+        urls = [url.text for url in root.findall('ns:url/ns:loc', namespaces)]
 
-    if token_count > (MAX_TOKENS - TOKENS_RESERVED_FOR_OBJECTIVE):
-        # Truncate the content
-        objective = truncate_to_max_tokens(objective, MAX_TOKENS - TOKENS_RESERVED_FOR_OBJECTIVE)
+        if include_pattern:
+            filtered_urls = [url for url in urls if re.search(include_pattern, url)]
+        elif exclude_pattern:
+            filtered_urls = [url for url in urls if not re.search(exclude_pattern, url)]
+        else:
+            filtered_urls = urls  # No filtering, return all URLs
 
-    docs = text_splitter.create_documents([content])
-    map_prompt = """
-    Write a summary of the following text for {objective}:
-    "{text}"
-    SUMMARY:
-    """
-    map_prompt_template = PromptTemplate(
-        template=map_prompt, input_variables=["text", "objective"])
-
-    summary_chain = load_summarize_chain(
-        llm=llm,
-        chain_type='map_reduce',
-        map_prompt=map_prompt_template,
-        combine_prompt=map_prompt_template,
-        verbose=True
-    )
-
-    output = summary_chain.run(input_documents=docs, objective=objective)
-
-    return output
+        return filtered_urls
+    except ET.ParseError as e:
+            print(f"Error parsing XML content: {e}")
+            return []
 
 
-class ScrapeWebsiteInput(BaseModel):
-    """Inputs for scrape_website"""
-    objective: str = Field(
-        description="The objective & task that users give to the agent")
-    url: str = Field(description="The url of the website to be scraped")
+
+def process_sitemap(sitemap_url, main_pages_pattern=None, exclude_pattern=None):
+    sitemap_content = fetch_xml_content(sitemap_url)
+    scraped_data = {}
+    if sitemap_content:
+
+        root = ET.fromstring(sitemap_content)
+        if root.tag.endswith('sitemapindex'):
+            nested_sitemaps = [loc.text for loc in root.findall('ns:sitemap/ns:loc', {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'})]
+            for nested_sitemap_url in nested_sitemaps:
+                nested_sitemap_content = fetch_xml_content(nested_sitemap_url)
+                if nested_sitemap_content:
+                    if main_pages_pattern:
+                        urls = parse_sitemap(nested_sitemap_content, main_pages_pattern)
+                    else:
+                        urls = parse_sitemap(nested_sitemap_content, exclude_pattern)
+                    
+                    
+                    i = 0
+
+                    for url in urls:
+                        print(url)
+                        content = scrape_page_content(url)
+                        print(content)
+                        if content:
+                            scraped_data[url] = content
+                        # i += 1
+                        # if(i>=5):
+                        #     break
+
+        elif root.tag.endswith('urlset'):
+            if main_pages_pattern:
+                urls = parse_sitemap(sitemap_content, main_pages_pattern)
+            else:
+                urls = parse_sitemap(sitemap_content, exclude_pattern)
+            for url in urls:
+                print(url)
+                content = scrape_page_content(url)
+                if content:
+                    scraped_data[url] = content
+                # i += 1
+                # if(i>=5):
+                #     break
+
+    return scraped_data
+
+def extract_key_terms(query):
+    doc = nlp(query)
+
+    # Exclude common interrogative words
+    exclude_words = {'who', 'what', 'where', 'when', 'why', 'how'}
+
+    # Extract noun chunks and key adjectives, excluding common question words
+    key_terms = [chunk.text for chunk in doc.noun_chunks if chunk.text.lower() not in exclude_words]
+    key_terms += [token.text for token in doc if token.pos_ == 'ADJ' and token.text.lower() not in exclude_words]
+
+    return key_terms
+
+def process_query2(query, data):
+    # Extract key terms from the query - this can be as simple or complex as you need
+    key_terms = extract_key_terms(query)  # You'll need to implement this function
+    key_terms = [term.lower() for term in key_terms]
+
+    print("key_terms: ", key_terms)
+    print("query: ", query)
+    # print("key terms: ", key_terms)
+    # Search for relevant content
+    relevant_content = []
+    for url, content in data.items():
+        content = " ".join(content)  # Flatten content if it's a list
+        if any(term in content for term in key_terms):
+            relevant_content.append((url, content))
+
+    return relevant_content
+
+def process_query(query, data):
+    doc_query = nlp(query)
+
+    relevant_content = []
+    for url, content_list in data.items():
+        content = " ".join(content_list)
+        doc_content = nlp(content)
+
+        for sentence in doc_content.sents:
+            similarity = doc_query.similarity(sentence)
+            if similarity > 0.5:  # Threshold for similarity, adjust as needed
+                relevant_content.append((url, sentence.text, similarity))
+
+    # Sort by similarity score and return top results
+    top_results = sorted(relevant_content, key=lambda x: x[2], reverse=True)[:5]  # Adjust the number as needed
+    return top_results
 
 
-class ScrapeWebsiteTool(BaseTool):
-    name = "scrape_website"
-    description = "useful when you need to get data from a website url, passing both url and objective to the function; DO NOT make up any url, the url should only be from the search results"
-    args_schema: Type[BaseModel] = ScrapeWebsiteInput
+def generate_answer_with_gpt(query, relevant_content):
+    try:
+        openai.api_key = "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"
 
-    def _run(self, objective: str, url: str):
-        return scrape_website(objective, url)
+        # Combine the relevant content into a single string
+        combined_content = " ".join([content for _, content in relevant_content])
+        
 
-    def _arun(self, url: str):
-        raise NotImplementedError("error here")
+        # Formulate the prompt for GPT
+        prompt = f"I want you to find an answer with this question : {query} \n Find the answer in this contents: {combined_content}\n\n"
 
+        # Call the OpenAI API
+        response = openai.Completion.create(
+            engine="gpt-3.5-turbo-instruct-0914",  # You can choose different engines as needed
+            prompt=prompt,
+            max_tokens=500  # Adjust as needed
+        )
 
-# 3. Create langchain agent with the tools above
-tools = [
-    Tool(
-        name="Search",
-        func=search,
-        description="useful for when you need to answer questions about current events, data. You should ask targeted questions"
-    ),
-    ScrapeWebsiteTool(),
-]
+        return response.choices[0].text.strip()
 
-system_message = SystemMessage(
-    content="""You are a world class researcher, who can do detailed research on any topic and produce facts based results; 
-            you do not make things up, you will try as hard as possible to gather facts & data to back up the research;
-            You should research for the top 10 best/most popular products base on the objective
-            
-            Please make sure you complete the objective above with the following rules:
-            1/ You should do enough research to gather as much information as possible about the objective
-            2/ If there are url of relevant links & articles, you will scrape it to gather more information
-            3/ After scraping & search, you should think "is there any new things i should search & scraping based on the data I collected to increase research quality?" If answer is yes, continue; But don't do this more than 3 iteratins
-            4/ You should not make things up, you should only write facts & data that you have gathered
-            5/ In the final output, please return the research findings in a structured JSON format. The JSON should include a "research_summary", an array of "items" with details, and a "sources" array with reference links.
-            6/ For example, if the research topic is 'Best Baby Car Seats for 2023', the JSON should look something like this:
-            7/ {"research_summary":"Summary of the research...","items":[{"name":"Product Name","description":"Product Description","source":"URL Source","what_we_like":"List 1-3 points about what makes this product stand out","best_for":"Describe the type of user or situation this product is best suited for","price":"$0.00","image":"image url"],"sources":[{"title":"Source Title","link":"Source Link"}]}
-            8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate. 8/ Please make sure the JSON is well-formatted and valid. Only returned one set of research_summary to avoid duplicate."""
-)
+    except openai.error.OpenAIError as e:
+            print(f"Error in OpenAI API call: {e}")
+            return "Sorry, I couldn't process the request."
 
-agent_kwargs = {
-    "extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")],
-    "system_message": system_message,
-}
+def questions():
+    # print(scrape_page_content("https://bluemercury.com"))
+    # Load scraped data from JSON
+    with open("scraped_data.json", "r") as file:
+        scraped_data = json.load(file)
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
-memory = ConversationSummaryBufferMemory(
-    memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
+    # Example query
+    user_query = "Who is the target market for this store?"  # Replace this with actual user input
+    relevant_content = process_query(user_query, scraped_data)
+    print("content: ", relevant_content)
+    # Use NLP/AI to generate an answer from relevant_content
+    # answer = generate_answer(relevant_content, user_query)  # This is a placeholder for the AI integration
 
-agent = initialize_agent(
-    tools,
-    llm,
-    agent=AgentType.OPENAI_FUNCTIONS,
-    verbose=True,
-    agent_kwargs=agent_kwargs,
-    memory=memory,
-)
+    if relevant_content:
+        answer = generate_answer_with_gpt(user_query, relevant_content)
+        print("Question: ",user_query)
+        print("")
+        print("Answer:", answer)
+    else:
+        print("No relevant content found for the query.")
+    
 
+def main():
+    website_url = "https://developer.weweb.io/"  # Replace with the target website URL
+    exclude_pattern = r'/(product|products|collection|collections)/'# Regular expression to exclude URLs
+    main_pages_pattern = r'/(about|faq|contact|home|pages)/'
 
-# 4. Use streamlit to create a web app
-# def main():
-#     st.set_page_config(page_title="AI research agent", page_icon=":bird:")
+    robots_txt_content = fetch_robots_txt(website_url)
+    if robots_txt_content:
+        sitemap_url = find_sitemap_url(robots_txt_content)
+        if sitemap_url:
+            scraped_data = process_sitemap(sitemap_url, main_pages_pattern, exclude_pattern)
+            save_to_json(scraped_data, "scraped_data.json")
+        else:
+            print("Sitemap URL not found in robots.txt")
+    else:
+        print("Failed to fetch robots.txt")
 
-#     st.header("AI research agent :bird:")
-#     query = st.text_input("Research goal")
-
-#     if query:
-#         st.write("Doing research for ", query)
-
-#         result = agent({"input": query})
-
-#         st.info(result['output'])
-
-
-# if __name__ == '__main__':
-#     main()
-
-
-# 5. Set this as an API endpoint via FastAPI
-app = FastAPI()
-
-
-class Query(BaseModel):
-    query: str
-
-
-@app.post("/")
-def researchAgent(query: Query):
-    query = query.query
-    content = agent({"input": query})
-    actual_content = content['output']
-    return actual_content
+if __name__ == "__main__":
+    questions()

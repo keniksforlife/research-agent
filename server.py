@@ -70,7 +70,8 @@ user_agents = [
 
 
 class ProductData(BaseModel):
-    input_json: List[Dict[str, Any]] = Field(..., example=[{"Products": [], "Article Title": "The Best Prams of 2023", "Article ID": "recEDOOL9KxHsnHOl"}])
+    input_json: List[Dict[str, Any]] = Field(..., example=[{"Products": [
+    ], "Article Title": "The Best Prams of 2023", "Article ID": "recEDOOL9KxHsnHOl"}])
 
 
 # HELPER FUNCTIONS
@@ -194,14 +195,17 @@ async def save_cookies(cookies, path="cookies.json"):
         json.dump(cookies, file)
 
 # Function to load cookies from a file
+
+
 async def load_cookies(path="cookies.json"):
     try:
         with open(path, "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return None  # No cookies file found
-    
+
 api_key = '0fc58242b7ce53ffe32fb48490d580af'
+
 
 def solve_captcha(captcha_image_url):
     # Download the image from the URL
@@ -224,7 +228,8 @@ def solve_captcha(captcha_image_url):
         # Poll for the solved CAPTCHA
         for i in range(10):
             time.sleep(5)  # Wait for 5 seconds before each check
-            result = requests.get(f'http://2captcha.com/res.php?key={api_key}&action=get&id={request_id}&json=1')
+            result = requests.get(
+                f'http://2captcha.com/res.php?key={api_key}&action=get&id={request_id}&json=1')
             print('solving ...')
             if result.json()['status'] == 1:
                 # CAPTCHA Solved
@@ -241,9 +246,10 @@ def solve_captcha(captcha_image_url):
 # else:
 #     print("Failed to solve CAPTCHA")
 
+
 async def scrape_website(objective: str, url: str):
 
-    try: 
+    try:
         print("Start Scraping")
         # Connect to Browserless.io
         browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
@@ -260,7 +266,7 @@ async def scrape_website(objective: str, url: str):
         # Set User-Agent
         print('set useragent')
         await page.setUserAgent(selected_user_agent)
-        
+
         print('load coockies')
         # Load cookies from file and set them if they exist
         cookies = await load_cookies()
@@ -287,11 +293,11 @@ async def scrape_website(objective: str, url: str):
             if captcha_image:
                 print("Solving the captcha ...")
                 captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
-                
+
                 # Solve CAPTCHA
                 captcha_solution = solve_captcha(captcha_image_url)
                 print("captcha status", captcha_solution)
-                
+
                 # Input the solution and submit the form
                 if captcha_solution is not None and captcha_solution != "":
                     await page.type('#captchacharacters', captcha_solution)
@@ -302,16 +308,14 @@ async def scrape_website(objective: str, url: str):
                         await page.waitForNavigation()  # Timeout in milliseconds
 
                     except pyppeteer.errors.TimeoutError:
-                        logging.error("Navigation timeout after CAPTCHA submission.")
+                        logging.error(
+                            "Navigation timeout after CAPTCHA submission.")
                         # Handle timeout
                         # return "Navigation timeout occurred."
                 else:
                     print("Captcha solution is not available or is invalid.")
         except pyppeteer.errors.NetworkError as e:
             print(f"No Captcha: {e}")
-        
-        
-        
 
         # Random sleep to mimic user reading page
         await asyncio.sleep(random.uniform(3, 15))
@@ -347,9 +351,9 @@ async def scrape_website(objective: str, url: str):
             name = str(name_elem.text.strip()) if name_elem else "N/A"
 
             details = clean_text(str(details_elem.text.strip())
-                                ) if details_elem else "N/A"
+                                 ) if details_elem else "N/A"
             description = str(description_elem.text.strip()
-                            ) if description_elem else "N/A"
+                              ) if description_elem else "N/A"
             about = str(about_elem.text.strip()) if about_elem else "N/A"
             image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
 
@@ -422,9 +426,10 @@ app = FastAPI()
 
 class Query(BaseModel):
     query: str
+    type: str
 
 
-def long_running_task(query, unique_id, max_attempts=3):
+def long_running_task(query, unique_id, type, max_attempts=3):
     if max_attempts == 0:
         print("Maximum attempts reached. Could not get valid JSON.")
         return
@@ -468,19 +473,17 @@ def long_running_task(query, unique_id, max_attempts=3):
                 product_count_with_images += 1
 
                 # Stop if we've gathered 10 products with image URLs
-                if product_count_with_images >= 10:
+                if product_count_with_images >= 2:
                     break
         else:
-            print("Warning: product_details is not a dictionary",
-                  type(product_details))
-            print("product details: ", product_details)
+            print("Warning: product_details is not a dictionary")
 
     actual_content = all_product_details
 
     try:
         if (is_valid_json):
             save_to_airtable(remove_duplicate_json(
-                actual_content), query, unique_id)
+                actual_content), query, unique_id, type)
         else:
             print(f"Invalid JSON received. Attempts left: {max_attempts - 1}")
             long_running_task(query, unique_id, max_attempts=max_attempts - 1)
@@ -490,36 +493,60 @@ def long_running_task(query, unique_id, max_attempts=3):
 
 @app.post("/")
 def researchAgentV2(query: Query):
+    type = query.type
     query = query.query
+    
     unique_id = str(uuid.uuid4())
     # Start a new thread for the long-running task
-    thread = Thread(target=long_running_task, args=(query, unique_id))
+    thread = Thread(target=long_running_task, args=(query, unique_id, type))
     thread.start()
 
     return {"message": "Request is being processed", "id": unique_id}
+
 
 @app.post("/createJSON")
 async def create_json(data: ProductData):
     # Convert input JSON data to string
     input_json_str = json.dumps(data.input_json)
-    
+
     # Use StringIO to simulate a file-like object for input JSON data
     input_json_file = StringIO(input_json_str)
     # Use StringIO to create a file-like object for output JSON data
     output_json_file = StringIO()
-    
+
     # Call the transform_product_data function
     transform_product_data(input_json_file, output_json_file)
-    
+
     # Get the transformed JSON data from the output file-like object
     output_json_file.seek(0)
     output_json_data = json.load(output_json_file)
-    
+
     return output_json_data
 
+def get_airtable_api_id(type):
+    if type == "US Baby":
+        return "appMIkd5mMSKDXzkr"
+    elif type == "UK Baby":
+        return "appPA8CS25feRpk84"
+    elif type == "UK Beauty":
+        return "appxmV9N7mo372EkX"
+    else:
+        raise ValueError("Invalid type specified")
+    
+    
+def get_make_api_url(type):
+    if type == "US Baby":
+        return "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
+    elif type == "UK Baby":
+        return "https://hook.eu1.make.com/m198nfyf5pus5ijd4svjjyjbup9n2148"
+    elif type == "UK Beauty":
+        return "https://hook.eu1.make.com/zrkuo3gwed1duqykaohastd573u1jat6"
+    else:
+        raise ValueError("Invalid type specified")
+    
 
-def save_to_airtable(all_product_details, category, unique_id):
-    API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Products"
+def save_to_airtable(all_product_details, category, unique_id, type):
+    API_URL = "https://api.airtable.com/v0/" + get_airtable_api_id(type) + "/Products"
 
     print("SAVING RECORDS TO AIRTABLE . . .")
     headers = {
@@ -552,7 +579,7 @@ def save_to_airtable(all_product_details, category, unique_id):
     if response.status_code == 200:
 
         # Create nre record with batch_id in Generate Content Table
-        API_URL = "https://api.airtable.com/v0/appMIkd5mMSKDXzkr/Generated%20Articles"
+        API_URL = "https://api.airtable.com/v0/" + get_airtable_api_id(type) + "/Generated%20Articles"
 
         data = {
             "fields": {
@@ -562,7 +589,7 @@ def save_to_airtable(all_product_details, category, unique_id):
         requests.post(API_URL, headers=headers, json=data)
 
         # Execute Generation of Artile Scenario in Make
-        API_URL = "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
+        API_URL = get_make_api_url(type)
 
         data = {
             "batch_id": unique_id
