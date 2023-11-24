@@ -144,51 +144,6 @@ def filter_similar_products(product_list, threshold=0.35):
             # print(f"Adding product: {product1['title']}")
     return filtered_products
 
-
-def search(query):
-    url = "https://google.serper.dev/search"
-
-    payload = json.dumps({
-        "q": query + " site:amazon.com intext:/dp/",
-        "num": 40
-    })
-
-    headers = {
-        'X-API-KEY': serper_api_key,
-        'Content-Type': 'application/json'
-    }
-
-    try:
-        response = requests.request("POST", url, headers=headers, data=payload)
-        # Raise an HTTPError if the HTTP request returned an unsuccessful status code
-        response.raise_for_status()
-
-        results_json = json.loads(response.text)
-        # Retrieve the list of organic results
-        organic_results = results_json.get('organic', [])
-
-        amazon_results = [
-            result for result in organic_results if 'amazon.com' in result.get('link', '')]
-
-        print(
-            f"Successfully fetched {len(amazon_results)} Amazon results.")
-
-        # Filter out similar products
-        unique_amazon_results = filter_similar_products(amazon_results)
-
-        print(
-            f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
-
-        return unique_amazon_results
-
-    except requests.RequestException as e:
-        logging.error(f"Failed to fetch search results: {e}")
-        return None
-
-
-# print(search("Best Pregnancy Pillows"))
-# 2. Tool for scraping
-
 # Function to save cookies to a file
 async def save_cookies(cookies, path="cookies.json"):
     with open(path, "w") as file:
@@ -247,6 +202,149 @@ def solve_captcha(captcha_image_url):
 #     print("Failed to solve CAPTCHA")
 
 
+
+def search(query):
+    url = "https://google.serper.dev/search"
+
+    payload = json.dumps({
+        "q": query + " site:amazon.com intext:/dp/",
+        "num": 40
+    })
+
+    headers = {
+        'X-API-KEY': serper_api_key,
+        'Content-Type': 'application/json'
+    }
+
+    try:
+        response = requests.request("POST", url, headers=headers, data=payload)
+        # Raise an HTTPError if the HTTP request returned an unsuccessful status code
+        response.raise_for_status()
+
+        results_json = json.loads(response.text)
+        # Retrieve the list of organic results
+        organic_results = results_json.get('organic', [])
+
+        amazon_results = [
+            result for result in organic_results if 'amazon.com' in result.get('link', '')]
+
+        print(
+            f"Successfully fetched {len(amazon_results)} Amazon results.")
+
+        # Filter out similar products
+        unique_amazon_results = filter_similar_products(amazon_results)
+
+        print(
+            f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
+
+        return unique_amazon_results
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch search results: {e}")
+        return None
+
+async def search_amazon(query):
+    amazon_url = "https://www.amazon.com/s?k=" + query
+
+    # Connect to Browserless.io
+    browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
+    # Create a new page
+    page = await browser.newPage()
+
+    # Randomly select a User-Agent
+    selected_user_agent = random.choice(user_agents)
+
+    # Set User-Agent
+    print('set useragent')
+    await page.setUserAgent(selected_user_agent)
+
+    print('load coockies')
+    # Load cookies from file and set them if they exist
+    cookies = await load_cookies()
+    if cookies:
+        await page.setCookie(*cookies)
+
+    print('navigating', amazon_url)
+    # Navigate to the URL
+    await page.goto(amazon_url)
+    print("Visited: ", amazon_url)
+
+    # Retrieve and save cookies
+    cookies = await page.cookies()
+    await save_cookies(cookies)
+
+    # Check if CAPTCHA is present
+    print("Checking Captcha")
+
+    try:
+          # Scrape content and manipulate as needed
+        content = await page.content()
+        soup = BeautifulSoup(content, "html.parser")
+
+        try:
+            await asyncio.sleep(random.uniform(3, 15))
+
+            captcha_image = await page.querySelector('img[src*="captcha"]')
+            print(captcha_image)
+            if captcha_image:
+                print("Solving the captcha ...")
+                captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
+
+                # Solve CAPTCHA
+                captcha_solution = solve_captcha(captcha_image_url)
+                print("captcha status", captcha_solution)
+
+                # Input the solution and submit the form
+                if captcha_solution is not None and captcha_solution != "":
+                    await page.type('#captchacharacters', captcha_solution)
+                    await page.click('button[type="submit"]')
+                    print('captcha submitted')
+                    try:
+                        # Wait for navigation to complete
+                        await page.waitForNavigation()  # Timeout in milliseconds
+
+                    except pyppeteer.errors.TimeoutError:
+                        logging.error(
+                            "Navigation timeout after CAPTCHA submission.")
+                        # Handle timeout
+                        # return "Navigation timeout occurred."
+                else:
+                    print("Captcha solution is not available or is invalid.")
+        except pyppeteer.errors.NetworkError as e:
+            print(f"No Captcha: {e}")
+
+
+        search_results = soup.find_all('div', {'data-component-type': 's-search-result'})
+
+        product_details = []
+        for item in search_results:
+            # Extract only the URL of the product detail page
+            link_element = item.find('a', {'class': 'a-link-normal s-no-outline'}, href=True)
+            price_element = item.find('span', {'class': 'a-price'})
+            if link_element and 'dp/' in link_element['href']:
+                product_url = 'https://www.amazon.com' + link_element['href']
+                price = price_element.find('span', {'class': 'a-offscreen'}).text if price_element else "N/A"
+
+                product_details.append({'url': product_url, 'price': price})
+
+
+        print(f"Found {len(product_details)} product URLs")
+        print(product_details)
+        return product_details
+
+    except pyppeteer.errors.NetworkError as e:
+        print(f"Error during requests to {amazon_url} : {e}")
+        return None
+    finally:
+        try:
+            await browser.close()  # Ensure this is awaited
+        except Exception as e:
+            logging.error(f"Error closing browser: {e}")
+
+
+# asyncio.run(search_amazon("high chair"))
+# 2. Tool for scraping
+
 async def scrape_website(objective: str, url: str):
 
     try:
@@ -256,9 +354,6 @@ async def scrape_website(objective: str, url: str):
         print('new page')
         # Create a new page
         page = await browser.newPage()
-
-        # browser = await pyppeteer.launch(headless=True, args=['--no-sandbox', '--disable-gpu'])
-        # page = await browser.newPage()
 
         # Randomly select a User-Agent
         selected_user_agent = random.choice(user_agents)
@@ -286,7 +381,7 @@ async def scrape_website(objective: str, url: str):
         print("Checking Captcha")
 
         try:
-            await asyncio.sleep(5)
+            await asyncio.sleep(random.uniform(3, 15))
 
             captcha_image = await page.querySelector('img[src*="captcha"]')
             print(captcha_image)
@@ -435,14 +530,14 @@ def long_running_task(query, unique_id, type, max_attempts=3):
         return
 
     # content = agent({"input": "Top 10 " + query})
-    search_results = search(query)
+    search_results = asyncio.run(search_amazon(query))
 
     if search_results is None:
         print("Search failed. Exiting.")
         return
 
     # Extract URLs from search results
-    urls = [result['link'] for result in search_results]
+    urls = [result['url'] for result in search_results]
 
     # Initialize an empty list to hold all the scraped data
     all_product_details = []
@@ -451,20 +546,20 @@ def long_running_task(query, unique_id, type, max_attempts=3):
     product_count_with_images = 0
 
     # Create a dictionary for easy lookup of search result items by URL
-    search_results_dict = {result['link']: result for result in search_results}
+    search_results_dict = {result['url']: result for result in search_results}
 
    # Step 2: Loop through each URL to scrape data.
     for url in urls:
         product_details = asyncio.run(
             scrape_website('Scrape product details', url))
-
-        # Include search result data if available
+        
+        print(product_details)
         search_result_item = search_results_dict.get(url, {})
         price = search_result_item.get('price', 'N/A')
-        snippet = search_result_item.get('snippet', 'N/A')
 
         if isinstance(product_details, dict):
             # Check if the product has an image URL
+            snippet = product_details.get('snippet', 'N/A')
             if product_details.get('Images') and product_details['Images'][0].get('url').strip() not in ["", "N/A"]:
                 product_details['Price'] = str(price)
                 product_details['Description'] = snippet
