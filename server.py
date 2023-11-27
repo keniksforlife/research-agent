@@ -37,12 +37,16 @@ from io import StringIO
 from typing import List, Dict, Any
 import base64
 import time
+import http.client
+from urllib.parse import quote
 
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
 airtable_key = os.getenv("AIRTABLE_API_KEY")
+scrape_ant_key_1 = os.getenv("SCRAPING_ANT_KEY_1")
+scrape_ant_key_2 = os.getenv("SCRAPING_ANT_KEY_2")
 
 # List of User Agents
 user_agents = [
@@ -121,14 +125,24 @@ def is_valid_json(json_str):
 
 
 def calculate_similarity(text1, text2):
+    if not text1.strip() or not text2.strip():
+        # One or both texts are empty
+        return 0
+
     vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([text1, text2])
-    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    return similarity
+    try:
+        tfidf_matrix = vectorizer.fit_transform([text1, text2])
+        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        return similarity
+    except ValueError:
+        # Handling the case where TF-IDF fails (e.g., due to stop words)
+        return 0
+
 
 
 def filter_similar_products(product_list, threshold=0.35):
     filtered_products = []
+
     for i, product1 in enumerate(product_list):
         is_similar = False
         for j, product2 in enumerate(filtered_products):
@@ -203,146 +217,83 @@ def solve_captcha(captcha_image_url):
 
 
 
-def search(query):
-    url = "https://google.serper.dev/search"
+def search_amazon(query):
+    # Prepare the URL for ScrapingAnt API
 
-    payload = json.dumps({
-        "q": query + " site:amazon.com intext:/dp/",
-        "num": 40
-    })
-
-    headers = {
-        'X-API-KEY': serper_api_key,
-        'Content-Type': 'application/json'
-    }
+    print("search products for {query}")
+    encoded_query = quote(query)
+    api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2Fwww.amazon.com%2Fs%3Fk%3D{encoded_query}&x-api-key={scrape_ant_key_1}&proxy_country=US"
 
     try:
-        response = requests.request("POST", url, headers=headers, data=payload)
-        # Raise an HTTPError if the HTTP request returned an unsuccessful status code
+        response = requests.get(api_url)
         response.raise_for_status()
 
-        results_json = json.loads(response.text)
-        # Retrieve the list of organic results
-        organic_results = results_json.get('organic', [])
+        # Process the HTML content
+        soup = BeautifulSoup(response.content, "html.parser")
 
-        amazon_results = [
-            result for result in organic_results if 'amazon.com' in result.get('link', '')]
+        search_results = soup.find_all('div', {'data-component-type': 's-search-result'})
 
-        print(
-            f"Successfully fetched {len(amazon_results)} Amazon results.")
+        print("Finding Products")
+        product_details = []
+        for item in search_results:
+            asin = item['data-asin']
+            if not asin:
+                continue
 
-        # Filter out similar products
-        unique_amazon_results = filter_similar_products(amazon_results)
+            product_info = {'asin': asin}
+
+            title_element = item.select_one('.a-size-medium.a-color-base.a-text-normal, .a-size-base-plus.a-color-base.a-text-normal, .a-size-base.a-color-base')
+            product_info['title'] = title_element.get_text(strip=True) if title_element else "N/A"
+
+            # Extract URL
+            url_element = item.select_one('.a-link-normal.s-no-outline')
+            product_info['url'] = 'https://www.amazon.com' + url_element['href'] if url_element else None
+
+            # Extract Price
+            price_element = item.select_one('span.a-price > span.a-offscreen')
+            product_info['price'] = price_element.get_text(strip=True) if price_element else "N/A"
+
+            # Extract Rating
+            rating_element = item.select_one('.a-icon-star-small')
+            if rating_element:
+                rating_text = rating_element.get_text(strip=True)
+                product_info['rating'] = rating_text.split(' ')[0]
+
+            # Extract Number of Reviews
+            reviews_element = item.select_one('.a-size-small .a-size-base')
+            reviews_count =  reviews_element.get_text(strip=True) if reviews_element else "N/A"
+
+            try:
+                # Remove commas and convert to integer
+                product_info['reviews_count'] = int(reviews_count.replace(',', '')) if reviews_count.replace(',', '').isdigit() else 0
+            except ValueError:
+                # Handle cases where conversion to integer fails
+                product_info['reviews_count'] = 0
+
+            # Extract Image
+            image_element = item.select_one('img.s-image')
+            product_info['image'] = image_element['src'] if image_element else None
+
+            product_details.append(product_info)
+
+        print(f"Found {len(product_details)} products")
+
+        unique_amazon_results = filter_similar_products(product_details)
 
         print(
             f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
 
-        return unique_amazon_results
+         # Sort the products by 'reviews_count', descending
+        sorted_product_details = sorted(unique_amazon_results, key=lambda x: x['reviews_count'], reverse=True)
+
+        return sorted_product_details
+    
 
     except requests.RequestException as e:
-        logging.error(f"Failed to fetch search results: {e}")
+        print(f"Error during requests to ScrapingAnt API: {e}")
         return None
-
-async def search_amazon(query):
-    amazon_url = "https://www.amazon.com/s?k=" + query
-
-    # Connect to Browserless.io
-    browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
-    # Create a new page
-    page = await browser.newPage()
-
-    # Randomly select a User-Agent
-    selected_user_agent = random.choice(user_agents)
-
-    # Set User-Agent
-    print('set useragent')
-    await page.setUserAgent(selected_user_agent)
-
-    print('load coockies')
-    # Load cookies from file and set them if they exist
-    cookies = await load_cookies()
-    if cookies:
-        await page.setCookie(*cookies)
-
-    print('navigating', amazon_url)
-    # Navigate to the URL
-    await page.goto(amazon_url)
-    print("Visited: ", amazon_url)
-
-    # Retrieve and save cookies
-    cookies = await page.cookies()
-    await save_cookies(cookies)
-
-    # Check if CAPTCHA is present
-    print("Checking Captcha")
-
-    try:
-          # Scrape content and manipulate as needed
-        content = await page.content()
-        soup = BeautifulSoup(content, "html.parser")
-
-        try:
-            await asyncio.sleep(random.uniform(3, 15))
-
-            captcha_image = await page.querySelector('img[src*="captcha"]')
-            print(captcha_image)
-            if captcha_image:
-                print("Solving the captcha ...")
-                captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
-
-                # Solve CAPTCHA
-                captcha_solution = solve_captcha(captcha_image_url)
-                print("captcha status", captcha_solution)
-
-                # Input the solution and submit the form
-                if captcha_solution is not None and captcha_solution != "":
-                    await page.type('#captchacharacters', captcha_solution)
-                    await page.click('button[type="submit"]')
-                    print('captcha submitted')
-                    try:
-                        # Wait for navigation to complete
-                        await page.waitForNavigation()  # Timeout in milliseconds
-
-                    except pyppeteer.errors.TimeoutError:
-                        logging.error(
-                            "Navigation timeout after CAPTCHA submission.")
-                        # Handle timeout
-                        # return "Navigation timeout occurred."
-                else:
-                    print("Captcha solution is not available or is invalid.")
-        except pyppeteer.errors.NetworkError as e:
-            print(f"No Captcha: {e}")
-
-
-        search_results = soup.find_all('div', {'data-component-type': 's-search-result'})
-
-        product_details = []
-        for item in search_results:
-            # Extract only the URL of the product detail page
-            link_element = item.find('a', {'class': 'a-link-normal s-no-outline'}, href=True)
-            price_element = item.find('span', {'class': 'a-price'})
-            if link_element and 'dp/' in link_element['href']:
-                product_url = 'https://www.amazon.com' + link_element['href']
-                price = price_element.find('span', {'class': 'a-offscreen'}).text if price_element else "N/A"
-
-                product_details.append({'url': product_url, 'price': price})
-
-
-        print(f"Found {len(product_details)} product URLs")
-        print(product_details)
-        return product_details
-
-    except pyppeteer.errors.NetworkError as e:
-        print(f"Error during requests to {amazon_url} : {e}")
-        return None
-    finally:
-        try:
-            await browser.close()  # Ensure this is awaited
-        except Exception as e:
-            logging.error(f"Error closing browser: {e}")
-
-
-# asyncio.run(search_amazon("high chair"))
+    
+# print(search_amazon("high chair"))
 # 2. Tool for scraping
 
 async def scrape_website(objective: str, url: str):
@@ -362,7 +313,13 @@ async def scrape_website(objective: str, url: str):
         print('set useragent')
         await page.setUserAgent(selected_user_agent)
 
-        print('load coockies')
+        # Set Accept-Language header to prefer English content
+        await page.setExtraHTTPHeaders({
+            'Accept-Language': 'en-US,en;q=0.5'
+        })
+
+
+        print('load cookies')
         # Load cookies from file and set them if they exist
         cookies = await load_cookies()
         if cookies:
@@ -512,7 +469,91 @@ async def scrape_website(objective: str, url: str):
         except Exception as e:
             logging.error(f"Error closing browser: {e}")
 
-# asyncio.run(scrape_website("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
+async def scrape_website_ant(objective: str, url: str):
+    try:
+        print(f"Start Scraping {url}")
+
+        # Prepare the URL for ScrapingAnt API
+        encoded_url = quote(url)
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key={scrape_ant_key_2}&proxy_country=US"
+
+        response = requests.get(api_url)
+        response.raise_for_status()
+
+        # Process the HTML content
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Extract the required data using BeautifulSoup
+        name_elem = soup.select_one('span.product-title-word-break')
+        image_url_elem = soup.select_one('img[data-old-hires]')
+        image_url_elem2 = soup.select_one(
+            '[data-action="main-image-click"] img')
+        details_elem = soup.select_one('div#detailBullets_feature_div')
+        details_elem2 = soup.select_one('div#productDetails_feature_div')
+        details_elem3 = soup.select_one('div#prodDetails')
+        description_elem = soup.select_one('#productDescription p, #productDescription')
+        if not description_elem:
+            description_elem = soup.select_one('.a-expander-content')
+
+        about_elem = soup.select_one('#feature-bullets ul, #feature-bullets')
+
+        # Check for None before accessing attributes
+        name = str(name_elem.text.strip()) if name_elem else "N/A"
+
+        details = clean_text(str(details_elem.text.strip())
+                                ) if details_elem else "N/A"
+        
+        # Check for None before accessing attributes
+        description = description_elem.get_text(strip=True) if description_elem else "N/A"
+        about = about_elem.get_text(strip=True) if about_elem else "N/A"
+
+        about = str(about_elem.text.strip()) if about_elem else "N/A"
+        image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
+
+        if (image_url == "N/A"):
+            image_url = clean_text(
+                str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
+
+        if (details == "N/A"):
+            details = clean_text(
+                str(details_elem2.text.strip())) if details_elem2 else "N/A"
+
+        if (details == "N/A"):
+            details = clean_text(
+                str(details_elem3.text.strip())) if details_elem3 else "N/A"
+
+
+        # Construct and return the product details dictionary
+        product_details = {
+            "sp_name": name,
+            "Images": [
+                {
+                    "url": is_valid_url(image_url)
+                }
+            ],
+            "Image Link": is_valid_url(image_url),
+            "sp_other_details": details,
+            "Description": description,
+            "sp_description": description,
+            "sp_about": about,
+            "Buy Link": url,
+        }
+
+        print(product_details)
+
+        if (name == "N/A"):
+            return "Not a valid product content. Please find another product."
+        else:
+            return product_details
+
+
+    except requests.RequestException as e:
+        print(f"Error during requests to ScrapingAnt API: {e}")
+        return "Network error occurred."
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return "An unexpected error occurred."
+# asyncio.run(scrape_website_ant("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
 
 # 5. Set this as an API endpoint via FastAPI
@@ -530,7 +571,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
         return
 
     # content = agent({"input": "Top 10 " + query})
-    search_results = asyncio.run(search_amazon(query))
+    search_results = search_amazon(query)
 
     if search_results is None:
         print("Search failed. Exiting.")
@@ -551,7 +592,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
    # Step 2: Loop through each URL to scrape data.
     for url in urls:
         product_details = asyncio.run(
-            scrape_website('Scrape product details', url))
+            scrape_website_ant('Scrape product details', url))
         
         print(product_details)
         search_result_item = search_results_dict.get(url, {})
