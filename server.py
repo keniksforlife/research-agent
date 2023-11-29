@@ -555,6 +555,78 @@ async def scrape_website_ant(objective: str, url: str):
         return "An unexpected error occurred."
 # asyncio.run(scrape_website_ant("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
 
+async def scrape_amazon_critical_reviews(asin):
+    try:
+        print(f"Start Scraping Critical Reviews for ASIN: {asin}")
+
+        # Construct the URL for the critical reviews page
+        reviews_url = f"https://www.amazon.com/product-reviews/{asin}/ref=cm_cr_arp_d_viewopt_sr?filterByStar=critical&pageNumber=1"
+        encoded_url = quote(reviews_url)
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key={scrape_ant_key_1}&proxy_country=US"
+
+        response = requests.get(api_url)
+        response.raise_for_status()
+
+        # Process the HTML content
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Extract review elements
+        reviews = []
+        review_elements = soup.select("#cm_cr-review_list .review")
+        for review_elem in review_elements[:5]:
+            # Extract the review text
+            review_text_elem = review_elem.select_one('span[data-hook="review-body"]')
+            review_text = ' '.join(text for text in review_text_elem.stripped_strings) if review_text_elem else "N/A"
+
+            # Extract the review title
+            review_title_elem = review_elem.select_one('*[data-hook="review-title"] > span')
+            review_title = review_title_elem.get_text(strip=True) if review_title_elem else "N/A"
+
+            # Extract the location and date
+            location_and_date_elem = review_elem.select_one('span[data-hook="review-date"]')
+            location_and_date = location_and_date_elem.get_text(strip=True) if location_and_date_elem else "N/A"
+
+            # Check if the review is from a verified purchase
+            verified_elem = review_elem.select_one('span[data-hook="avp-badge"]')
+            verified = bool(verified_elem.get_text(strip=True)) if verified_elem else False
+
+            # Extract the rating
+            rating_elem = review_elem.select_one('*[data-hook*="review-star-rating"]')
+            rating = rating_elem.get_text(strip=True) if rating_elem else "N/A"
+            
+            reviews.append({
+                'title': review_title,
+                'text': review_text,
+                'location_and_date': location_and_date,
+                'verified': verified,
+                'rating': rating,
+            })
+
+        print(f"Found {len(reviews)} critical reviews for ASIN: {asin}")
+        print(reviews)
+        return reviews
+
+    except requests.RequestException as e:
+        print(f"Error during requests to ScrapingAnt API: {e}")
+        return "Network error occurred."
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return "An unexpected error occurred."
+
+# asyncio.run(scrape_amazon_critical_reviews("B08DY55SQZ"))
+
+def format_reviews_for_airtable(reviews):
+    # Concatenate the text of each review, separated by a specific delimiter
+    delimiter = " | "  # You can change this to any delimiter you prefer
+    formatted_reviews = delimiter.join(review['text'] for review in reviews)
+
+    # Optionally truncate the string to fit within Airtable's character limit
+    max_length = 10000  # Example limit, adjust based on Airtable's actual limit
+    if len(formatted_reviews) > max_length:
+        formatted_reviews = formatted_reviews[:max_length] + "..."
+
+    return formatted_reviews
+
 
 # 5. Set this as an API endpoint via FastAPI
 app = FastAPI()
@@ -573,6 +645,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
     # content = agent({"input": "Top 10 " + query})
     search_results = search_amazon(query)
 
+    print("Search Results", search_results)
     if search_results is None:
         print("Search failed. Exiting.")
         return
@@ -594,16 +667,25 @@ def long_running_task(query, unique_id, type, max_attempts=3):
         product_details = asyncio.run(
             scrape_website_ant('Scrape product details', url))
         
-        print(product_details)
         search_result_item = search_results_dict.get(url, {})
         price = search_result_item.get('price', 'N/A')
+        asin = search_result_item.get('asin')
 
         if isinstance(product_details, dict):
-            # Check if the product has an image URL
-            snippet = product_details.get('snippet', 'N/A')
+
+            if price == 'N/A':
+                print(f"Invalid or no price for product at {url}, skipping.")
+                continue
+
+            if asin:
+                product_reviews = asyncio.run(scrape_amazon_critical_reviews(asin))
+                formatted_reviews = format_reviews_for_airtable(product_reviews)
+                print(formatted_reviews)
+                product_details['Reviews'] = formatted_reviews
+
             if product_details.get('Images') and product_details['Images'][0].get('url').strip() not in ["", "N/A"]:
                 product_details['Price'] = str(price)
-                product_details['Description'] = snippet
+                # product_details['Description'] = snippet
 
                 all_product_details.append(product_details)
                 product_count_with_images += 1
@@ -616,6 +698,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
 
     actual_content = all_product_details
 
+    print(actual_content)
     try:
         if (is_valid_json):
             save_to_airtable(remove_duplicate_json(
