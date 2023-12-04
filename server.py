@@ -39,6 +39,7 @@ import base64
 import time
 import http.client
 from urllib.parse import quote
+import openai
 
 
 load_dotenv()
@@ -47,31 +48,7 @@ serper_api_key = os.getenv("SERP_API_KEY")
 airtable_key = os.getenv("AIRTABLE_API_KEY")
 scrape_ant_key_1 = os.getenv("SCRAPING_ANT_KEY_1")
 scrape_ant_key_2 = os.getenv("SCRAPING_ANT_KEY_2")
-
-# List of User Agents
-user_agents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:104.0) Gecko/20100101 Firefox/104.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:103.0) Gecko/20100101 Firefox/103.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Edge/109.0.0.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Edge/108.0.0.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (Linux; Android 12; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36",
-    "Mozilla/5.0 (Linux; Android 11; Pixel 4 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 OPR/85.0.4341.75",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15 OPR/85.0.4341.75"
-]
-
+open_ai_key = os.getenv("OPENAI_API_KEY")
 
 class ProductData(BaseModel):
     input_json: List[Dict[str, Any]] = Field(..., example=[{"Products": [
@@ -173,301 +150,148 @@ async def load_cookies(path="cookies.json"):
     except FileNotFoundError:
         return None  # No cookies file found
 
-api_key = '0fc58242b7ce53ffe32fb48490d580af'
-
-
-def solve_captcha(captcha_image_url):
-    # Download the image from the URL
-    response = requests.get(captcha_image_url)
-    print(captcha_image_url)
-    if response.status_code == 200:
-        # Convert the image to a base64-encoded string
-        print("convertng image url to base64")
-        encoded_image = base64.b64encode(response.content).decode('utf-8')
-        # Send CAPTCHA for solving
-        data = {
-            'key': api_key,
-            'method': 'base64',
-            'body': encoded_image,  # Base64 encoded image
-            'json': 1
-        }
-        response = requests.post('http://2captcha.com/in.php', data=data)
-        request_id = response.json()['request']
-
-        # Poll for the solved CAPTCHA
-        for i in range(10):
-            time.sleep(5)  # Wait for 5 seconds before each check
-            result = requests.get(
-                f'http://2captcha.com/res.php?key={api_key}&action=get&id={request_id}&json=1')
-            print('solving ...')
-            if result.json()['status'] == 1:
-                # CAPTCHA Solved
-                print('captcha solved')
-                return result.json()['request']
-    else:
-        print(f"Failed to download CAPTCHA image: HTTP {response.status_code}")
-    return None
-
-# Example usage
-# captcha_solution = solve_captcha("https://images-na.ssl-images-amazon.com/captcha/twhhswbk/Captcha_ysxgzjhfwo.jpg", api_key)
-# if captcha_solution:
-#     print("CAPTCHA Solved:", captcha_solution)
-# else:
-#     print("Failed to solve CAPTCHA")
-
-
-
 def search_amazon(query):
-    # Prepare the URL for ScrapingAnt API
+    product_details = []
+    unique_amazon_results = []
+    page_number = 1
+    max_pages = 5  # Limit to prevent too many requests
 
-    print("search products for {query}")
-    encoded_query = quote(query)
-    api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2Fwww.amazon.com%2Fs%3Fk%3D{encoded_query}&x-api-key={scrape_ant_key_1}&proxy_country=US"
+    while len(unique_amazon_results) < 10 and page_number <= max_pages:
+        print(f"Searching products for {query} - Page {page_number}")
 
-    try:
-        response = requests.get(api_url)
-        response.raise_for_status()
+        # Prepare the URL for ScrapingAnt API for each page
+        encoded_query = quote(query)
+        api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2Fwww.amazon.com%2Fs%3Fk%3D{encoded_query}&page={page_number}&x-api-key={scrape_ant_key_1}&proxy_country=US"
 
-        # Process the HTML content
-        soup = BeautifulSoup(response.content, "html.parser")
+        try:
+            response = requests.get(api_url)
+            response.raise_for_status()
 
-        search_results = soup.find_all('div', {'data-component-type': 's-search-result'})
+            # Process the HTML content
+            soup = BeautifulSoup(response.content, "html.parser")
 
-        print("Finding Products")
-        product_details = []
-        for item in search_results:
-            asin = item['data-asin']
-            if not asin:
-                continue
+            search_results = soup.find_all('div', {'data-component-type': 's-search-result'})
+            if not search_results:
+                break  # Break if no results found on the page
 
-            product_info = {'asin': asin}
+            for item in search_results:
+                asin = item['data-asin']
+                if not asin:
+                    continue
 
-            title_element = item.select_one('.a-size-medium.a-color-base.a-text-normal, .a-size-base-plus.a-color-base.a-text-normal, .a-size-base.a-color-base')
-            product_info['title'] = title_element.get_text(strip=True) if title_element else "N/A"
+                product_info = {'asin': asin}
 
-            # Extract URL
-            url_element = item.select_one('.a-link-normal.s-no-outline')
-            product_info['url'] = 'https://www.amazon.com' + url_element['href'] if url_element else None
+                title_element = item.select_one('.a-size-medium.a-color-base.a-text-normal, .a-size-base-plus.a-color-base.a-text-normal, .a-size-base.a-color-base')
+                product_info['title'] = title_element.get_text(strip=True) if title_element else "N/A"
 
-            # Extract Price
-            price_element = item.select_one('span.a-price > span.a-offscreen')
-            product_info['price'] = price_element.get_text(strip=True) if price_element else "N/A"
+                # Extract URL
+                url_element = item.select_one('.a-link-normal.s-no-outline')
+                product_info['url'] = 'https://www.amazon.com' + url_element['href'] if url_element else None
 
-            # Extract Rating
-            rating_element = item.select_one('.a-icon-star-small')
-            if rating_element:
-                rating_text = rating_element.get_text(strip=True)
-                product_info['rating'] = rating_text.split(' ')[0]
+                # Extract Price
+                price_element = item.select_one('span.a-price > span.a-offscreen')
+                product_info['price'] = price_element.get_text(strip=True) if price_element else "N/A"
 
-            # Extract Number of Reviews
-            reviews_element = item.select_one('.a-size-small .a-size-base')
-            reviews_count =  reviews_element.get_text(strip=True) if reviews_element else "N/A"
+                # Extract Rating
+                rating_element = item.select_one('.a-icon-star-small')
+                if rating_element:
+                    rating_text = rating_element.get_text(strip=True)
+                    product_info['rating'] = rating_text.split(' ')[0]
 
-            try:
-                # Remove commas and convert to integer
-                product_info['reviews_count'] = int(reviews_count.replace(',', '')) if reviews_count.replace(',', '').isdigit() else 0
-            except ValueError:
-                # Handle cases where conversion to integer fails
-                product_info['reviews_count'] = 0
+                # Extract Number of Reviews
+                reviews_element = item.select_one('.a-size-small .a-size-base')
+                reviews_count =  reviews_element.get_text(strip=True) if reviews_element else "N/A"
 
-            # Extract Image
-            image_element = item.select_one('img.s-image')
-            product_info['image'] = image_element['src'] if image_element else None
+                try:
+                    # Remove commas and convert to integer
+                    product_info['reviews_count'] = int(reviews_count.replace(',', '')) if reviews_count.replace(',', '').isdigit() else 0
+                except ValueError:
+                    # Handle cases where conversion to integer fails
+                    product_info['reviews_count'] = 0
 
-            product_details.append(product_info)
+                # Extract Image
+                image_element = item.select_one('img.s-image')
+                product_info['image'] = image_element['src'] if image_element else None
 
-        print(f"Found {len(product_details)} products")
+                product_details.append(product_info)
 
-        unique_amazon_results = filter_similar_products(product_details)
 
-        print(
-            f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
+            #End For search_results
+            product_details.extend([product for product in product_details if product['asin'] not in [p['asin'] for p in unique_amazon_results]])
+            unique_amazon_results = filter_similar_products(product_details)
 
-         # Sort the products by 'reviews_count', descending
-        sorted_product_details = sorted(unique_amazon_results, key=lambda x: x['reviews_count'], reverse=True)
+            print(unique_amazon_results)
+            page_number += 1
 
-        return sorted_product_details
-    
+        except requests.RequestException as e:
+            print(f"Error during requests to ScrapingAnt API: {e}")
+            break
 
-    except requests.RequestException as e:
-        print(f"Error during requests to ScrapingAnt API: {e}")
-        return None
-    
-# print(search_amazon("high chair"))
+    print(f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
+    sorted_product_details = sorted(unique_amazon_results, key=lambda x: x['reviews_count'], reverse=True)
+    return sorted_product_details
+
+
+# print(search_amazon("robot vacuum cleaners"))
 # 2. Tool for scraping
+# 
 
-async def scrape_website(objective: str, url: str):
+async def is_product_image(image_url):
 
-    try:
-        print("Start Scraping")
-        # Connect to Browserless.io
-        browser = await pyppeteer.connect(browserWSEndpoint=f"wss://chrome.browserless.io?token={brwoserless_api_key}")
-        print('new page')
-        # Create a new page
-        page = await browser.newPage()
+    print(f'checking if the {image_url} is a lifestyle image or not')
 
-        # Randomly select a User-Agent
-        selected_user_agent = random.choice(user_agents)
+    image_analysis_prompt = """
+      Please analyze the image carefully. Consider the following aspects to determine whether it is more likely a lifestyle image or a product image:
 
-        # Set User-Agent
-        print('set useragent')
-        await page.setUserAgent(selected_user_agent)
+      1. Context: Is the product shown in a real-life setting or scenario? Are there people interacting with it in a way that suggests everyday use or a certain lifestyle?
+      2. Focus: Is the primary focus on the product itself, with clear, detailed views of its features, or is the product part of a larger scene or narrative?
+      3. Emotional Appeal: Does the image seem to be telling a story or creating an emotional connection, suggesting how the product enhances a particular lifestyle or experience?
+      4. Background: Is the product displayed against a plain and neutral background or within a setting that adds context to its use?
 
-        # Set Accept-Language header to prefer English content
-        await page.setExtraHTTPHeaders({
-            'Accept-Language': 'en-US,en;q=0.5'
-        })
+      Based on these criteria, is this image a lifestyle image (Yes/No)? Please only answer with Yes or No.
+      """
 
-
-        print('load cookies')
-        # Load cookies from file and set them if they exist
-        cookies = await load_cookies()
-        if cookies:
-            await page.setCookie(*cookies)
-
-        print('navigating', url)
-        # Navigate to the URL
-        await page.goto(url)
-        print("Visited: ", url)
-
-        # Retrieve and save cookies
-        cookies = await page.cookies()
-        await save_cookies(cookies)
-
-        # Check if CAPTCHA is present
-        print("Checking Captcha")
-
-        try:
-            await asyncio.sleep(random.uniform(3, 15))
-
-            captcha_image = await page.querySelector('img[src*="captcha"]')
-            print(captcha_image)
-            if captcha_image:
-                print("Solving the captcha ...")
-                captcha_image_url = await page.evaluate('(captcha_image) => captcha_image.src', captcha_image)
-
-                # Solve CAPTCHA
-                captcha_solution = solve_captcha(captcha_image_url)
-                print("captcha status", captcha_solution)
-
-                # Input the solution and submit the form
-                if captcha_solution is not None and captcha_solution != "":
-                    await page.type('#captchacharacters', captcha_solution)
-                    await page.click('button[type="submit"]')
-                    print('captcha submitted')
-                    try:
-                        # Wait for navigation to complete
-                        await page.waitForNavigation()  # Timeout in milliseconds
-
-                    except pyppeteer.errors.TimeoutError:
-                        logging.error(
-                            "Navigation timeout after CAPTCHA submission.")
-                        # Handle timeout
-                        # return "Navigation timeout occurred."
-                else:
-                    print("Captcha solution is not available or is invalid.")
-        except pyppeteer.errors.NetworkError as e:
-            print(f"No Captcha: {e}")
-
-        # Random sleep to mimic user reading page
-        await asyncio.sleep(random.uniform(3, 15))
-
-        try:
-            await page.mouse.move(random.randint(0, 500), random.randint(0, 500))
-        except pyppeteer.errors.NetworkError as e:
-            print(f"An error occurred: {e}")
-
-        # Random sleep before next action
-        await asyncio.sleep(random.uniform(2, 5))
-
-        # Scrape content and manipulate as needed
-        content = await page.content()
-        soup = BeautifulSoup(content, "html.parser")
-
-        try:
-            name_elem = soup.select_one('span.product-title-word-break')
-            price_elem = soup.select_one(
-                '.reinventPricePriceToPayMargin.priceToPay')
-
-            image_url_elem = soup.select_one('img[data-old-hires]')
-            image_url_elem2 = soup.select_one(
-                '[data-action="main-image-click"] img')
-            details_elem = soup.select_one('div#detailBullets_feature_div')
-            details_elem2 = soup.select_one('div#productDetails_feature_div')
-            details_elem3 = soup.select_one('div#prodDetails')
-            description_elem = soup.select_one('.a-spacing-small p span')
-            about_elem = soup.select_one(
-                'div.a-spacing-medium.a-spacing-top-small')
-
-            # Check for None before accessing attributes
-            name = str(name_elem.text.strip()) if name_elem else "N/A"
-
-            details = clean_text(str(details_elem.text.strip())
-                                 ) if details_elem else "N/A"
-            description = str(description_elem.text.strip()
-                              ) if description_elem else "N/A"
-            about = str(about_elem.text.strip()) if about_elem else "N/A"
-            image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
-
-            if (image_url == "N/A"):
-                image_url = clean_text(
-                    str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
-
-            if (details == "N/A"):
-                details = clean_text(
-                    str(details_elem2.text.strip())) if details_elem2 else "N/A"
-
-            if (details == "N/A"):
-                details = clean_text(
-                    str(details_elem3.text.strip())) if details_elem3 else "N/A"
-
-            product_details = {
-                "sp_name": name,
-                "Images": [
-                    {
-                        "url": is_valid_url(image_url)
+    # Craft the prompt for GPT
+    prompt_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": image_analysis_prompt
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_url
                     }
-                ],
-                "Image Link": is_valid_url(image_url),
-                "sp_other_details": details,
-                "sp_description": description,
-                "sp_about": about,
-                "Buy Link": url,
-            }
+                }
+            ]
+        }
+    ]
 
-            print(product_details)
+    # Send a request to GPT
+    params = {
+        "model": "gpt-4-vision-preview",
+        "messages": prompt_messages,
+        "api_key": open_ai_key,
+        "headers": {"Openai-Version": "2020-11-07"},
+        "max_tokens": 1000,
+    }
 
-            # Serialize the Python dictionary to a JSON-formatted string
-            # product_details_json = json.dumps(product_details, ensure_ascii=False)
+    result = openai.ChatCompletion.create(**params)
+    response = result.choices[0].message.content.strip().lower()
 
-            if (name == "N/A"):
-                return "Not a valid product content. Please find another product."
-            else:
-                return product_details
-
-        except AttributeError as e:
-            logging.error(f"Failed to scrape some attributes: {e}")
-
-    except pyppeteer.errors.NetworkError as e:
-        logging.error(f"NetworkError occurred: {e}")
-        # Handle the network error (e.g., retry, log, exit, etc.)
-        return "Network error occurred."
-
-    except pyppeteer.errors.PageError as e:
-        logging.error(f"PageError occurred: {e}")
-        # Handle page errors (e.g., retry, log, exit, etc.)
-        return "Page error occurred."
-
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        # Handle other unexpected errors
-        return "An unexpected error occurred."
-
-    finally:
-        try:
-            await browser.close()  # Ensure this is awaited
-        except Exception as e:
-            logging.error(f"Error closing browser: {e}")
+    # Check if the response contains 'yes' or 'no' and return accordingly
+    if 'yes' in response:
+        print('lifestyle image')
+        return False
+    elif 'no' in response:
+        print('product image')
+        return True
+    else:
+        print("Response does not contain a clear Yes or No.")
+        return None
 
 async def scrape_website_ant(objective: str, url: str):
     try:
@@ -485,13 +309,41 @@ async def scrape_website_ant(objective: str, url: str):
 
         # Extract the required data using BeautifulSoup
         name_elem = soup.select_one('span.product-title-word-break')
-        image_url_elem = soup.select_one('img[data-old-hires]')
-        image_url_elem2 = soup.select_one(
-            '[data-action="main-image-click"] img')
         details_elem = soup.select_one('div#detailBullets_feature_div')
         details_elem2 = soup.select_one('div#productDetails_feature_div')
         details_elem3 = soup.select_one('div#prodDetails')
         description_elem = soup.select_one('#productDescription p, #productDescription')
+
+
+
+        #Image URLs Logic
+
+        image_url = "N/A"
+       # Attempt to fetch high-resolution images using regex
+        images = re.findall('"hiRes":"([^"]+)"', response.text)
+        all_images = images[:5]  # Limit to first 5 images
+        
+        if all_images:
+            print(all_images)
+            # Check each image to find a product image
+            for img_url in all_images:
+                if await is_product_image(img_url):
+                    image_url = img_url
+                    break
+            
+        
+        if image_url == "N/A" and not all_images:
+            image_url_elem = soup.select_one('img[data-old-hires]')
+            image_url_elem2 = soup.select_one('[data-action="main-image-click"] img')
+            image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
+
+            if image_url == "N/A":
+                image_url = clean_text(str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
+            
+
+        #End Image URLs Logic
+
+
         if not description_elem:
             description_elem = soup.select_one('.a-expander-content')
 
@@ -508,12 +360,7 @@ async def scrape_website_ant(objective: str, url: str):
         about = about_elem.get_text(strip=True) if about_elem else "N/A"
 
         about = str(about_elem.text.strip()) if about_elem else "N/A"
-        image_url = image_url_elem['data-old-hires'] if image_url_elem else "N/A"
-
-        if (image_url == "N/A"):
-            image_url = clean_text(
-                str(image_url_elem2.text.strip())) if image_url_elem2 else "N/A"
-
+    
         if (details == "N/A"):
             details = clean_text(
                 str(details_elem2.text.strip())) if details_elem2 else "N/A"
@@ -553,7 +400,7 @@ async def scrape_website_ant(objective: str, url: str):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return "An unexpected error occurred."
-# asyncio.run(scrape_website_ant("","https://www.amazon.com/Nuby-Natural-Soothing-Benzocaine-Belladonna/dp/B079QLR1YX"))
+# asyncio.run(scrape_website_ant("","https://www.amazon.com/Adjustable-Memory-Pillow-Sleepers-Bamboo/dp/B0172GSQ7S"))
 
 async def scrape_amazon_critical_reviews(asin):
     try:
@@ -603,7 +450,6 @@ async def scrape_amazon_critical_reviews(asin):
             })
 
         print(f"Found {len(reviews)} critical reviews for ASIN: {asin}")
-        print(reviews)
         return reviews
 
     except requests.RequestException as e:
@@ -691,7 +537,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
                 product_count_with_images += 1
 
                 # Stop if we've gathered 10 products with image URLs
-                if product_count_with_images >= 10:
+                if product_count_with_images >= 15:
                     break
         else:
             print("Warning: product_details is not a dictionary")
@@ -711,7 +557,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
 
 
 @app.post("/")
-def researchAgentV2(query: Query):
+def researchAgent(query: Query):
     type = query.type
     query = query.query
     
