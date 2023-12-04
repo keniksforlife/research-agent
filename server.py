@@ -156,7 +156,7 @@ def search_amazon(query):
     page_number = 1
     max_pages = 5  # Limit to prevent too many requests
 
-    while len(unique_amazon_results) < 10 and page_number <= max_pages:
+    while len(unique_amazon_results) < 15 and page_number <= max_pages:
         print(f"Searching products for {query} - Page {page_number}")
 
         # Prepare the URL for ScrapingAnt API for each page
