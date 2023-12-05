@@ -516,6 +516,8 @@ def long_running_task(query, unique_id, type, max_attempts=3):
         search_result_item = search_results_dict.get(url, {})
         price = search_result_item.get('price', 'N/A')
         asin = search_result_item.get('asin')
+        review_count = search_result_item.get('reviews_count')
+        rating = search_result_item.get('rating')
 
         if isinstance(product_details, dict):
 
@@ -526,8 +528,10 @@ def long_running_task(query, unique_id, type, max_attempts=3):
             if asin:
                 product_reviews = asyncio.run(scrape_amazon_critical_reviews(asin))
                 formatted_reviews = format_reviews_for_airtable(product_reviews)
-                print(formatted_reviews)
+                
                 product_details['Reviews'] = formatted_reviews
+                product_details['Review Count'] = review_count
+                product_details['Rating'] = rating
 
             if product_details.get('Images') and product_details['Images'][0].get('url').strip() not in ["", "N/A"]:
                 product_details['Price'] = str(price)
@@ -619,49 +623,27 @@ def save_to_airtable(all_product_details, category, unique_id, type):
         "Content-Type": "application/json"
     }
 
-    # Initialize an empty list to hold the data dictionaries
-    data_list = []
+    # Function to send data to Airtable
+    def send_data_to_airtable(data):
+        response = requests.post(API_URL, headers=headers, json={"records": data})
+        if response.status_code != 200:
+            print(f"Failed to add record: {response.content}")
+            return False
+        return True
 
-    # Loop through all items in the parsed_json
-    for item in all_product_details:
-        data_dict = {
-            "fields": {
-                "Product Name": item.get('sp_name'),
-                "Source": item['Buy Link'],
-                "Category": category,
-                "batch_id": unique_id
-            }
-        }
-        # Append the data_dict to the data_list
-        data_list.append(data_dict)
-        data_dict['fields'].update(item)
+    # Splitting data into batches of 10 records each
+    for i in range(0, len(all_product_details), 10):
+        batch = all_product_details[i:i + 10]
+        data_list = [{"fields": item} for item in batch]
+        if not send_data_to_airtable(data_list):
+            print("Error in saving batch to Airtable.")
+            break
 
-    response = requests.post(API_URL, headers=headers, json={
-        "records": data_list})
-    if response.status_code != 200:
-        print(f"Failed to add record: {response.content}")
+    API_URL = "https://api.airtable.com/v0/" + get_airtable_api_id(type) + "/Generated%20Articles"
+    data = {"fields": {"batch_id": unique_id}}
+    requests.post(API_URL, headers=headers, json=data)
 
-    if response.status_code == 200:
+    API_URL = get_make_api_url(type)
+    requests.get(API_URL, params={"batch_id": unique_id})
 
-        # Create nre record with batch_id in Generate Content Table
-        API_URL = "https://api.airtable.com/v0/" + get_airtable_api_id(type) + "/Generated%20Articles"
-
-        data = {
-            "fields": {
-                "batch_id": unique_id
-            }}
-
-        requests.post(API_URL, headers=headers, json=data)
-
-        # Execute Generation of Artile Scenario in Make
-        API_URL = get_make_api_url(type)
-
-        data = {
-            "batch_id": unique_id
-        }
-
-        requests.get(API_URL, json=data)
-
-        print("Record successfully added.")
-    else:
-        print(f"Failed to add record: {response.content}")
+    print("Record successfully added.")
