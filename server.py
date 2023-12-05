@@ -372,7 +372,7 @@ async def scrape_website_ant(objective: str, url: str):
 
         # Construct and return the product details dictionary
         product_details = {
-            "sp_name": name,
+            "Product Name": name,
             "Images": [
                 {
                     "url": is_valid_url(image_url)
@@ -386,7 +386,7 @@ async def scrape_website_ant(objective: str, url: str):
             "Buy Link": url,
         }
 
-        print(product_details)
+        # print(product_details)
 
         if (name == "N/A"):
             return "Not a valid product content. Please find another product."
@@ -540,15 +540,19 @@ def long_running_task(query, unique_id, type, max_attempts=3):
                 all_product_details.append(product_details)
                 product_count_with_images += 1
 
-                # Stop if we've gathered 10 products with image URLs
-                if product_count_with_images >= 15:
-                    break
+            product_details['Source'] = url
+            product_details['Category'] = query
+            product_details['batch_id'] = unique_id
+
+            # Stop if we've gathered 10 products with image URLs
+            if product_count_with_images >= 15:
+                break
         else:
             print("Warning: product_details is not a dictionary")
 
     actual_content = all_product_details
 
-    print(actual_content)
+    # print(actual_content)
     try:
         if (is_valid_json):
             save_to_airtable(remove_duplicate_json(
