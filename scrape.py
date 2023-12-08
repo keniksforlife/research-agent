@@ -5,9 +5,17 @@ from bs4 import BeautifulSoup
 import json
 import spacy
 import openai
+from google.cloud import bigquery
+from datetime import datetime
+import os
+from dotenv import load_dotenv
 
 # Load the spaCy model
 nlp = spacy.load('en_core_web_md')
+client = bigquery.Client()
+
+load_dotenv()
+open_ai_key = os.getenv("OPENAI_API_KEY")
 
 def save_to_json(data, filename):
     """Save the scraped data to a JSON file."""
@@ -84,7 +92,7 @@ def parse_sitemap(sitemap_content, include_pattern=None, exclude_pattern=None):
 
 
 
-def process_sitemap(sitemap_url, main_pages_pattern=None, exclude_pattern=None):
+def process_sitemap(website_name, sitemap_url, main_pages_pattern=None, exclude_pattern=None):
     sitemap_content = fetch_xml_content(sitemap_url)
     scraped_data = {}
     if sitemap_content:
@@ -108,24 +116,39 @@ def process_sitemap(sitemap_url, main_pages_pattern=None, exclude_pattern=None):
                         content = scrape_page_content(url)
                         print(content)
                         if content:
-                            scraped_data[url] = content
-                        # i += 1
-                        # if(i>=5):
-                        #     break
+                            data = {
+                                "url": url,
+                                "website_name": website_name,  # Replace with actual title extraction logic
+                                "content": " ".join(content),
+                                "date_added": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                            }
+                            insert_into_bigquery(data)
+                        i += 1
+                        if(i>=5):
+                            break
 
         elif root.tag.endswith('urlset'):
             if main_pages_pattern:
                 urls = parse_sitemap(sitemap_content, main_pages_pattern)
             else:
                 urls = parse_sitemap(sitemap_content, exclude_pattern)
+
+            i = 0
+
             for url in urls:
                 print(url)
                 content = scrape_page_content(url)
                 if content:
-                    scraped_data[url] = content
-                # i += 1
-                # if(i>=5):
-                #     break
+                    data = {
+                        "url": url,
+                        "website_name": website_name,  # Replace with actual title extraction logic
+                        "content": " ".join(content),
+                        "date_added": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    }
+                    insert_into_bigquery(data)
+                i += 1
+                if(i>=5):
+                    break
 
     return scraped_data
 
@@ -178,7 +201,7 @@ def process_query(query, data):
 
 def generate_answer_with_gpt(query, relevant_content):
     try:
-        openai.api_key = "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"
+        openai.api_key = open_ai_key
 
         # Combine the relevant content into a single string
         combined_content = " ".join([content for _, content in relevant_content])
@@ -191,7 +214,7 @@ def generate_answer_with_gpt(query, relevant_content):
         response = openai.Completion.create(
             engine="gpt-3.5-turbo-instruct-0914",  # You can choose different engines as needed
             prompt=prompt,
-            max_tokens=500  # Adjust as needed
+            max_tokens=3000  # Adjust as needed
         )
 
         return response.choices[0].text.strip()
@@ -199,16 +222,36 @@ def generate_answer_with_gpt(query, relevant_content):
     except openai.error.OpenAIError as e:
             print(f"Error in OpenAI API call: {e}")
             return "Sorry, I couldn't process the request."
+    
+def process_query_bigquery(query):
+    key_terms = extract_key_terms(query)
+    search_query = " | ".join(key_terms)  # Creating a search pattern from key terms
+
+    print(search_query)
+    
+    query_sql = f"""
+    SELECT url, content
+    FROM `qanda-website-ai.websites.website_content`
+    WHERE content LIKE '%{search_query}%'
+    """
+    print(query_sql)
+    query_job = client.query(query_sql)  # Make an API request.
+
+    relevant_content = []
+    for row in query_job:
+        relevant_content.append((row.url, row.content))
+
+    return relevant_content
 
 def questions():
     # print(scrape_page_content("https://bluemercury.com"))
     # Load scraped data from JSON
-    with open("scraped_data.json", "r") as file:
-        scraped_data = json.load(file)
+    # with open("scraped_data.json", "r") as file:
+    #     scraped_data = json.load(file)
 
     # Example query
-    user_query = "Who is the target market for this store?"  # Replace this with actual user input
-    relevant_content = process_query(user_query, scraped_data)
+    user_query = "Does this website offer/accept discount codes?"  # Replace this with actual user input
+    relevant_content = process_query_bigquery(user_query)
     print("content: ", relevant_content)
     # Use NLP/AI to generate an answer from relevant_content
     # answer = generate_answer(relevant_content, user_query)  # This is a placeholder for the AI integration
@@ -220,19 +263,34 @@ def questions():
         print("Answer:", answer)
     else:
         print("No relevant content found for the query.")
-    
+
+def insert_into_bigquery(data):
+    table_id = "qanda-website-ai.websites.website_content"  # Replace with your actual table ID
+    table = client.get_table(table_id)
+    rows_to_insert = [data]
+
+    errors = client.insert_rows_json(table, rows_to_insert)
+    if errors == []:
+        print("New rows have been added.")
+    else:
+        print("Encountered errors while inserting rows: {}".format(errors))
 
 def main():
-    website_url = "https://developer.weweb.io/"  # Replace with the target website URL
+    website_name = "bluemercury"
+    website_url = "https://bluemercury.com"  # Replace with the target website URL
     exclude_pattern = r'/(product|products|collection|collections)/'# Regular expression to exclude URLs
     main_pages_pattern = r'/(about|faq|contact|home|pages)/'
+
+    # Scrape the homepage content directly
+    # homepage_content = scrape_page_content(website_url)
+    # scraped_data = {website_url: homepage_content} if homepage_content else {}
 
     robots_txt_content = fetch_robots_txt(website_url)
     if robots_txt_content:
         sitemap_url = find_sitemap_url(robots_txt_content)
         if sitemap_url:
-            scraped_data = process_sitemap(sitemap_url, main_pages_pattern, exclude_pattern)
-            save_to_json(scraped_data, "scraped_data.json")
+            process_sitemap(website_name, sitemap_url, main_pages_pattern, exclude_pattern)
+            # save_to_json(scraped_data, "scraped_data.json")
         else:
             print("Sitemap URL not found in robots.txt")
     else:
