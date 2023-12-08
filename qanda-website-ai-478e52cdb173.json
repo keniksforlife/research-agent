@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "qanda-website-ai",
+  "private_key_id": "478e52cdb173d660eafa4e830350fb5280f43f18",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5xzxfzwQTZthD\n5tXWCxLx0o7LTkLZLzTqMCCGIQYZyAuP8vWvNLdgqnPAzRK7HJ+Jj3k4tigjm364\nU46GXN/Mb3s59luK3oq39DkeGuh6iLrTZy3gD3tAATh6U21F/23pKH4EjGLelgxF\n9aGuLPHvfsAdyutfqu8tQ7efYjupAAX8H54keIMdW8sd1b7hpOa5WYUikyDC1mYK\nAOVeobS+wvyiZG+hEvhQMY8Q7JbndntMNdrbkse+eQkWKOb6SRgpD5MkRZswXbtI\nkEioqmDGu6FKn1f7qrPtIX5+/Jvmxc816ZkidyYvwSIFo9mTpBbCYzcfYXr2EypT\n2An7DRbhAgMBAAECggEAB6jNNm4EjwA4fmQwAMkoGMxDkuJBI08s8VLWpHEMHVgA\nEglEU9rqjJO6fgJ2eTxu328I4muwL/ejO9pGEAgYOgeGnxcnIwyVz4vEJxeY6iRk\n/35Lh+dbf4INYA28fZxQXcKLn4hiMycgjmnYJqQ3vVYOeav6FFGp1sXp9ipIp2kE\nqD10HrXq9yAGWCnB/wcKj+1ITd9cHC7Pw8+y0sLV4mipTksgkMOTgA6piOJIAYZT\nbb9uCdLBZYR+j3R/Vk1aMDk9IQraWk5iGKbZuLTomMOF2FkALM4cnHAjitKhDnkG\nD6mU/QoZ7eC8HBxOKdE1DjzWj81efzF9JQV8rNjsOQKBgQD8z+qLrJGb+GLJLb8D\n9hjoh5NFFZCaVJdD1gAIlvW7cUrjH/YaRIRzuW2NvbrjJ6K6zTe+qvKSUzrc6cvf\ntJSY9Egi/UOQ+NQMq+hMCbslAXjHlgoMdDt/TaOjnRi/0wTN4SOgCXW7Tl4TPxqj\npe7M1dnSQq/ayGzKJrQN0qiLhwKBgQC8Hu68zbytcN0z8flYHy3bDBStRtX/Lbui\nDKPz2qcs6lCF/xLrEYFrCug8fRa12iJ9OGvYO+uCg+MFVTFe7hiAMZyswyYZpS6w\naKV88nCH+e2FxiAkIjhPGXOf3DBsvhjgrIppZ+tYT/xbD0Kx18l7Pmf32FeXB5Bc\n6BtMFy/0VwKBgDGH6sQCw2Rzfac8tzfnd2nXZhsa5oHWIOzBeLA2I17eC3YERQtQ\ncULbCYPDsGHg2hkPK+THSU8xz06I39CsaJCvC5MPW7WDisgQxipfnbLaXvd7hex6\nuU1vwKfFl5u9lCth+MDaGZ7g872Bl46IbAjlvQ9c0Wdj7SyN+KjcpPjxAoGAHo/L\n60JlT6wRU7oQ7x8JnReGWGw0oeM1I2t4S0qPdD2Q3WQGF8hdRR2dgw4zXVHV3pAG\n/Tcm2KpCfIBNqAV4V4M3191QWEQ8pI4rrHPakkypKN16JUSl7zvMTAFCoLf1ZLLD\nPcKTOmKsNcLx6+CJrAsEawBrom6pJl7S6Hav5LsCgYEAzhRYuUEddzV6SRXXvGBf\nI6SiRYfsxwRDyveqYTd0EAGBStcpiXyh+xy/MSITY0dDOnXB9lXXVEpO9tRD4Aqs\n+pIRu7sscvNKJhAwlOkn3kdl1PUkPhWUk4q+j3vXY+H2uLczK+E4MBkCHmU2/iOt\nNCNFoOMrxRR/xiN19NFp1Xs=\n-----END PRIVATE KEY-----\n",
+  "client_email": "qandai@qanda-website-ai.iam.gserviceaccount.com",
+  "client_id": "118363071206662659246",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/qandai%40qanda-website-ai.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -462,12 +462,19 @@ async def scrape_amazon_critical_reviews(asin):
 # asyncio.run(scrape_amazon_critical_reviews("B08DY55SQZ"))
 
 def format_reviews_for_airtable(reviews):
-    # Concatenate the text of each review, separated by a specific delimiter
-    delimiter = " | "  # You can change this to any delimiter you prefer
-    formatted_reviews = delimiter.join(review['text'] for review in reviews)
+    delimiter = " | "
+    formatted_reviews = []
 
-    # Optionally truncate the string to fit within Airtable's character limit
-    max_length = 10000  # Example limit, adjust based on Airtable's actual limit
+    for review in reviews:
+        if isinstance(review, dict) and 'text' in review:
+            formatted_reviews.append(review['text'])
+        else:
+            # Log the error or send a notification
+            print(f"Invalid review format: {review}")
+
+    formatted_reviews = delimiter.join(formatted_reviews)
+
+    max_length = 10000
     if len(formatted_reviews) > max_length:
         formatted_reviews = formatted_reviews[:max_length] + "..."
 
