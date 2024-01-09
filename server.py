@@ -46,8 +46,14 @@ load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
 airtable_key = os.getenv("AIRTABLE_API_KEY")
-scrape_ant_key_1 = os.getenv("SCRAPING_ANT_KEY_1")
-scrape_ant_key_2 = os.getenv("SCRAPING_ANT_KEY_2")
+
+scrape_ant_key_US_baby_1 = os.getenv("SCRAPING_ANT_KEY_a1")
+scrape_ant_key_US_baby_2 = os.getenv("SCRAPING_ANT_KEY_a2")
+scrape_ant_key_UK_baby_1 = os.getenv("SCRAPING_ANT_KEY_b1")
+scrape_ant_key_UK_baby_2 = os.getenv("SCRAPING_ANT_KEY_b2")
+scrape_ant_key_US_beauty_1 = os.getenv("SCRAPING_ANT_KEY_c1")
+scrape_ant_key_US_beauty_2 = os.getenv("SCRAPING_ANT_KEY_c2")
+
 open_ai_key = os.getenv("OPENAI_API_KEY")
 
 class ProductData(BaseModel):
@@ -150,7 +156,7 @@ async def load_cookies(path="cookies.json"):
     except FileNotFoundError:
         return None  # No cookies file found
 
-def search_amazon(query):
+def search_amazon(query, type):
     product_details = []
     unique_amazon_results = []
     page_number = 1
@@ -161,8 +167,10 @@ def search_amazon(query):
 
         # Prepare the URL for ScrapingAnt API for each page
         encoded_query = quote(query)
-        api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2Fwww.amazon.com%2Fs%3Fk%3D{encoded_query}&page={page_number}&x-api-key={scrape_ant_key_1}&proxy_country=US"
 
+        api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2F{get_amazon_url(type)}%2Fs%3Fk%3D{encoded_query}&page={page_number}&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
+
+        
         try:
             response = requests.get(api_url)
             response.raise_for_status()
@@ -186,7 +194,8 @@ def search_amazon(query):
 
                 # Extract URL
                 url_element = item.select_one('.a-link-normal.s-no-outline')
-                product_info['url'] = 'https://www.amazon.com' + url_element['href'] if url_element else None
+
+                product_info['url'] = 'https://'+ get_amazon_url(type) + url_element['href'] if url_element else None
 
                 # Extract Price
                 price_element = item.select_one('span.a-price > span.a-offscreen')
@@ -227,6 +236,10 @@ def search_amazon(query):
             print(f"Error during requests to ScrapingAnt API: {e}")
             break
 
+    if len(unique_amazon_results) == 0 and page_number == 1:
+        print("API Error")
+        return None
+    
     print(f"After filtering, {len(unique_amazon_results)} unique Amazon results remain.")
     sorted_product_details = sorted(unique_amazon_results, key=lambda x: x['reviews_count'], reverse=True)
     return sorted_product_details
@@ -293,13 +306,13 @@ async def is_product_image(image_url):
         print("Response does not contain a clear Yes or No.")
         return None
 
-async def scrape_website_ant(objective: str, url: str):
+async def scrape_website_ant(objective: str, url: str, type):
     try:
         print(f"Start Scraping {url}")
 
         # Prepare the URL for ScrapingAnt API
         encoded_url = quote(url)
-        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key={scrape_ant_key_2}&proxy_country=US"
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key="+ get_scraping_agent_api_2(type) + "&proxy_country=" + get_amazon_proxy_country(type)
 
         response = requests.get(api_url)
         response.raise_for_status()
@@ -402,14 +415,14 @@ async def scrape_website_ant(objective: str, url: str):
         return "An unexpected error occurred."
 # asyncio.run(scrape_website_ant("","https://www.amazon.com/Adjustable-Memory-Pillow-Sleepers-Bamboo/dp/B0172GSQ7S"))
 
-async def scrape_amazon_critical_reviews(asin):
+async def scrape_amazon_critical_reviews(asin, type):
     try:
         print(f"Start Scraping Critical Reviews for ASIN: {asin}")
 
         # Construct the URL for the critical reviews page
-        reviews_url = f"https://www.amazon.com/product-reviews/{asin}/ref=cm_cr_arp_d_viewopt_sr?filterByStar=critical&pageNumber=1"
+        reviews_url = f"https://{get_amazon_url(type)}/product-reviews/{asin}/ref=cm_cr_arp_d_viewopt_sr?filterByStar=critical&pageNumber=1"
         encoded_url = quote(reviews_url)
-        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key={scrape_ant_key_1}&proxy_country=US"
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
 
         response = requests.get(api_url)
         response.raise_for_status()
@@ -496,11 +509,12 @@ def long_running_task(query, unique_id, type, max_attempts=3):
         return
 
     # content = agent({"input": "Top 10 " + query})
-    search_results = search_amazon(query)
+    search_results = search_amazon(query,type)
 
     print("Search Results", search_results)
     if search_results is None:
         print("Search failed. Exiting.")
+        save_error_to_airtable(type)
         return
 
     # Extract URLs from search results
@@ -518,7 +532,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
    # Step 2: Loop through each URL to scrape data.
     for url in urls:
         product_details = asyncio.run(
-            scrape_website_ant('Scrape product details', url))
+            scrape_website_ant('Scrape product details', url,type))
         
         search_result_item = search_results_dict.get(url, {})
         price = search_result_item.get('price', 'N/A')
@@ -533,7 +547,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
                 continue
 
             if asin:
-                product_reviews = asyncio.run(scrape_amazon_critical_reviews(asin))
+                product_reviews = asyncio.run(scrape_amazon_critical_reviews(asin,type))
                 formatted_reviews = format_reviews_for_airtable(product_reviews)
                 
                 product_details['Reviews'] = formatted_reviews
@@ -624,6 +638,39 @@ def get_make_api_url(type):
     else:
         raise ValueError("Invalid type specified")
     
+def get_scraping_agent_api_1(type):
+    if type == "US Baby":
+        return scrape_ant_key_US_baby_1
+    elif type == "UK Baby":
+        return scrape_ant_key_US_baby_1
+    elif type == "UK Beauty":
+        return scrape_ant_key_US_beauty_1
+    else:
+        raise ValueError("Invalid get_scraping_agent_api_1 type specified")
+    
+def get_scraping_agent_api_2(type):
+    if type == "US Baby":
+        return scrape_ant_key_US_baby_2
+    elif type == "UK Baby":
+        return scrape_ant_key_US_baby_2
+    elif type == "UK Beauty":
+        return scrape_ant_key_US_beauty_2
+    else:
+        raise ValueError("Invalid get_scraping_agent_api_1 type specified")
+    
+def get_amazon_url(type):
+    if type == "UK Baby":
+        return "www.amazon.co.uk"
+    else:
+        return "www.amazon.com"
+    
+def get_amazon_proxy_country(type):
+    if type == "UK Baby":
+        return "UK"
+    else:
+        return "US"
+    
+    
 
 def save_to_airtable(all_product_details, category, unique_id, type):
     API_URL = "https://api.airtable.com/v0/" + get_airtable_api_id(type) + "/Products"
@@ -658,3 +705,17 @@ def save_to_airtable(all_product_details, category, unique_id, type):
     requests.get(API_URL, params={"batch_id": unique_id})
 
     print("Record successfully added.")
+
+def save_error_to_airtable(type):
+    API_URL = "https://api.airtable.com/v0/" + get_airtable_api_id(type) + "/Configuration"
+
+    print("SAVING RECORDS TO AIRTABLE . . .")
+    headers = {
+        "Authorization": f"Bearer {airtable_key}",
+        "Content-Type": "application/json"
+    }
+
+    data = {"fields": {"Status": "Error", "Remarks" : "No Products Found"}}
+    requests.post(API_URL, headers=headers, json=data)
+
+    print("Error message saved.")
