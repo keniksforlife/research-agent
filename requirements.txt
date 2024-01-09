@@ -1,0 +1,9 @@
+beautifulsoup4
+fastapi
+httpx
+openai
+python-dotenv
+pyppeteer
+requests
+scikit-learn
+streamlit
