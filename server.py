@@ -412,7 +412,7 @@ async def scrape_amazon_critical_reviews(asin, type):
         # Construct the URL for the critical reviews page
         reviews_url = f"https://{get_amazon_url(type)}/product-reviews/{asin}/ref=cm_cr_arp_d_viewopt_sr?filterByStar=critical&pageNumber=1"
         encoded_url = quote(reviews_url)
-        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&proxy_type=residentia&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
 
         response = requests.get(api_url)
         response.raise_for_status()
