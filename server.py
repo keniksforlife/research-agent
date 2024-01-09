@@ -669,7 +669,7 @@ def get_amazon_url(type):
     
 def get_amazon_proxy_country(type):
     if type == "UK Baby":
-        return "UK"
+        return "GB"
     else:
         return "US"
     
