@@ -28,6 +28,7 @@ from typing import List, Dict, Any
 import base64
 import time
 import http.client
+import urllib.parse
 from urllib.parse import quote
 import openai
 
@@ -145,6 +146,35 @@ async def load_cookies(path="cookies.json"):
             return json.load(file)
     except FileNotFoundError:
         return None  # No cookies file found
+    
+def load_cookies_for_scrapingant(path="cookies.json"):
+    try:
+        with open(path, "r") as file:
+            cookies = json.load(file)
+            # Format the cookies as 'name=value'
+            formatted_cookies = ';'.join([f"{cookie['name']}={cookie['value']}" for cookie in cookies])
+            # URL encode the formatted string
+            encoded_cookies = urllib.parse.quote(formatted_cookies)
+            return encoded_cookies
+    except FileNotFoundError:
+        return None  # No cookies file found
+    
+def save_cookie_string_to_file(cookie_string, path="cookies.json"):
+    # Split the cookie string into individual cookies
+    cookie_list = cookie_string.split(';')
+
+    # Parse each cookie into a dictionary
+    cookies_for_saving = []
+    for cookie in cookie_list:
+        name, value = cookie.strip().split('=', 1)  # Split on the first '='
+        cookies_for_saving.append({"name": name, "value": value})
+
+    # Save cookies to a file
+    with open(path, "w") as file:
+        json.dump(cookies_for_saving, file, indent=4)
+
+    print(f"Cookies saved to {path}")
+
 
 def search_amazon(query, type):
     product_details = []
@@ -152,21 +182,49 @@ def search_amazon(query, type):
     page_number = 1
     max_pages = 5  # Limit to prevent too many requests
 
+    max_retries = 15
+    retry_counter = 0
+    wait_intervals = [10, 30]  # Wait times in seconds
+
+    if os.path.exists("cookies.json"):
+        os.remove("cookies.json")
+
+    
     while len(unique_amazon_results) < 15 and page_number <= max_pages:
         print(f"Searching products for {query} - Page {page_number}")
+        cookies = ""
+
+        if os.path.exists("cookies.json"):
+            cookies = load_cookies_for_scrapingant()
+            cookies = "&cookies=" + cookies
 
         # Prepare the URL for ScrapingAnt API for each page
         encoded_query = quote(query)
 
-        api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2F{get_amazon_url(type)}%2Fs%3Fk%3D{encoded_query}&page={page_number}&proxy_type=residential&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
-
+        api_url = f"https://api.scrapingant.com/v2/extended?url=https%3A%2F%2F{get_amazon_url(type)}%2Fs%3Fk%3D{encoded_query}&page={page_number}&proxy_type=residential&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type) + cookies
+        print(api_url)
         
         try:
             response = requests.get(api_url)
             response.raise_for_status()
 
+            # Parse response content to JSON
+            data = response.json()
+
+            # print("HTML: ", data.get('html', ''))
+            print("Text: ", data.get('text', ''))
+            print("Cookies: ", data.get('cookies', ''))
+
+
+            if not os.path.exists("cookies.json"):
+                save_cookie_string_to_file(data.get('cookies', ''))
+
+
             # Process the HTML content
-            soup = BeautifulSoup(response.content, "html.parser")
+            # Extract HTML content
+            html_content = data.get('html', '')
+
+            soup = BeautifulSoup(html_content, "html.parser")
 
             search_results = soup.find_all('div', {'data-component-type': 's-search-result'})
             if not search_results:
@@ -221,10 +279,18 @@ def search_amazon(query, type):
 
             print(unique_amazon_results)
             page_number += 1
+            retry_counter = 0
 
         except requests.RequestException as e:
             print(f"Error during requests to ScrapingAnt API: {e}")
-            break
+
+            if retry_counter > max_retries:
+                print("Max retries reached. Stopping the process.")
+                break
+            
+            wait_time = wait_intervals[min(retry_counter - 1, len(wait_intervals) - 1)]
+            print(f"Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
 
     if len(unique_amazon_results) == 0 and page_number == 1:
         print("API Error")
@@ -297,12 +363,27 @@ async def is_product_image(image_url):
         return None
 
 async def scrape_website_ant(objective: str, url: str, type):
+
+    max_retries = 6
+    retry_counter = 0
+    wait_intervals = [10, 30]  # Wait times in seconds
+
+
     try:
         print(f"Start Scraping {url}")
 
+        cookies = ""
+        if os.path.exists("cookies.json"):
+            cookies = load_cookies_for_scrapingant()
+            cookies = "&cookies=" + cookies
+
+
+        time.sleep(random.uniform(3, 6))
         # Prepare the URL for ScrapingAnt API
         encoded_url = quote(url)
-        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&proxy_type=residential&x-api-key="+ get_scraping_agent_api_2(type) + "&proxy_country=" + get_amazon_proxy_country(type)
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key="+ get_scraping_agent_api_2(type) + "&proxy_country=" + get_amazon_proxy_country(type)  + cookies
+
+        print(api_url)
 
         response = requests.get(api_url)
         response.raise_for_status()
@@ -392,28 +473,61 @@ async def scrape_website_ant(objective: str, url: str, type):
         # print(product_details)
 
         if (name == "N/A"):
-            return "Not a valid product content. Please find another product."
+            print("Not a valid product content. Please find another product.")
+        
+            retry_counter += 1
+            if retry_counter > max_retries:
+                print("Max retries reached. Stopping the process.")
+                
+
+            wait_time = wait_intervals[min(retry_counter - 1, len(wait_intervals) - 1)]
+            print(f"Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            
         else:
+            retry_counter = 0
             return product_details
 
 
     except requests.RequestException as e:
         print(f"Error during requests to ScrapingAnt API: {e}")
-        return "Network error occurred."
+        
+    
+        retry_counter += 1
+        if retry_counter > max_retries:
+            print("Max retries reached. Stopping the process.")
+            return "Network error occurred."
+    
+        wait_time = wait_intervals[min(retry_counter - 1, len(wait_intervals) - 1)]
+        print(f"Retrying in {wait_time} seconds...")
+        time.sleep(wait_time)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return "An unexpected error occurred."
 # asyncio.run(scrape_website_ant("","https://www.amazon.com/Adjustable-Memory-Pillow-Sleepers-Bamboo/dp/B0172GSQ7S"))
 
 async def scrape_amazon_critical_reviews(asin, type):
+
+    # Initial settings
+    max_retries = 6
+    retry_counter = 0
+    wait_intervals = [10, 30]  # Wait times in seconds
+
+    cookies = ""
+    if os.path.exists("cookies.json"):
+        cookies = load_cookies_for_scrapingant()
+        cookies = "&cookies=" + cookies
+
     try:
         print(f"Start Scraping Critical Reviews for ASIN: {asin}")
+        time.sleep(random.uniform(3, 6))
 
         # Construct the URL for the critical reviews page
         reviews_url = f"https://{get_amazon_url(type)}/product-reviews/{asin}/ref=cm_cr_arp_d_viewopt_sr?filterByStar=critical&pageNumber=1"
         encoded_url = quote(reviews_url)
-        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&proxy_type=residentia&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type) + cookies
 
+        print(api_url)
         response = requests.get(api_url)
         response.raise_for_status()
 
@@ -453,11 +567,22 @@ async def scrape_amazon_critical_reviews(asin, type):
             })
 
         print(f"Found {len(reviews)} critical reviews for ASIN: {asin}")
+
+        retry_counter = 0  # Reset retry counter after a successful request
         return reviews
 
     except requests.RequestException as e:
         print(f"Error during requests to ScrapingAnt API: {e}")
-        return "Network error occurred."
+
+        retry_counter += 1
+        if retry_counter > max_retries:
+            print("Max retries reached. Stopping the process.")
+            return "Network error occurred."
+
+        wait_time = wait_intervals[min(retry_counter - 1, len(wait_intervals) - 1)]
+        print(f"Retrying in {wait_time} seconds...")
+        time.sleep(wait_time)
+        
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return "An unexpected error occurred."
@@ -510,6 +635,8 @@ def long_running_task(query, unique_id, type, max_attempts=3):
     if max_attempts == 0:
         print("Maximum attempts reached. Could not get valid JSON.")
         return
+
+    cookies = load_cookies_for_scrapingant()
 
     # content = agent({"input": "Top 10 " + query})
     search_results = search_amazon(query,type)
@@ -625,7 +752,7 @@ def get_airtable_api_id(type):
         return "appMIkd5mMSKDXzkr"
     elif type == "UK Baby":
         return "appPA8CS25feRpk84"
-    elif type == "UK Beauty":
+    elif type == "US Beauty":
         return "appxmV9N7mo372EkX"
     else:
         raise ValueError("Invalid type specified")
@@ -636,7 +763,7 @@ def get_make_api_url(type):
         return "https://hook.eu1.make.com/5uyqhpqm1beskwadyysebuvq23na7734"
     elif type == "UK Baby":
         return "https://hook.eu1.make.com/m198nfyf5pus5ijd4svjjyjbup9n2148"
-    elif type == "UK Beauty":
+    elif type == "US Beauty":
         return "https://hook.eu1.make.com/zrkuo3gwed1duqykaohastd573u1jat6"
     else:
         raise ValueError("Invalid type specified")
@@ -646,7 +773,7 @@ def get_scraping_agent_api_1(type):
         return scrape_ant_key_US_baby_1
     elif type == "UK Baby":
         return scrape_ant_key_US_baby_1
-    elif type == "UK Beauty":
+    elif type == "US Beauty":
         return scrape_ant_key_US_beauty_1
     else:
         raise ValueError("Invalid get_scraping_agent_api_1 type specified")
@@ -656,7 +783,7 @@ def get_scraping_agent_api_2(type):
         return scrape_ant_key_US_baby_2
     elif type == "UK Baby":
         return scrape_ant_key_US_baby_2
-    elif type == "UK Beauty":
+    elif type == "US Beauty":
         return scrape_ant_key_US_beauty_2
     else:
         raise ValueError("Invalid get_scraping_agent_api_1 type specified")
