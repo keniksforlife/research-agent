@@ -488,6 +488,19 @@ def format_reviews_for_airtable(reviews):
     formatted_reviews = delimiter.join(formatted_reviews)
 
     max_length = 10000
+    delimiter = " | "
+    formatted_reviews = []
+
+    for review in reviews:
+        if isinstance(review, dict) and 'text' in review:
+            formatted_reviews.append(review['text'])
+        else:
+            # Log the error or send a notification
+            print(f"Invalid review format: {review}")
+
+    formatted_reviews = delimiter.join(formatted_reviews)
+
+    max_length = 10000
     if len(formatted_reviews) > max_length:
         formatted_reviews = formatted_reviews[:max_length] + "..."
 

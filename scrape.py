@@ -26,6 +26,10 @@ client = bigquery.Client()
 
 load_dotenv()
 open_ai_key = os.getenv("OPENAI_API_KEY")
+client = bigquery.Client()
+
+load_dotenv()
+open_ai_key = os.getenv("OPENAI_API_KEY")
 
 def save_to_json(data, filename):
     """Save the scraped data to a JSON file."""
@@ -103,6 +107,7 @@ def parse_sitemap(sitemap_content, include_pattern=None, exclude_pattern=None):
 
 
 def process_sitemap(website_name, sitemap_url, main_pages_pattern=None, exclude_pattern=None):
+def process_sitemap(website_name, sitemap_url, main_pages_pattern=None, exclude_pattern=None):
     sitemap_content = fetch_xml_content(sitemap_url)
     scraped_data = {}
     if sitemap_content:
@@ -142,6 +147,9 @@ def process_sitemap(website_name, sitemap_url, main_pages_pattern=None, exclude_
                 urls = parse_sitemap(sitemap_content, main_pages_pattern)
             else:
                 urls = parse_sitemap(sitemap_content, exclude_pattern)
+
+            i = 0
+
 
             i = 0
 
@@ -264,6 +272,7 @@ def summarize_content(data, query, max_sentences=5, max_sentence_length=10):
 
 def generate_answer_with_gpt(query, relevant_content):
     try:
+        openai.api_key = open_ai_key
         openai.api_key = open_ai_key
 
         summarized_content = summarize_content(relevant_content,query)
@@ -457,6 +466,10 @@ def begin_scraping(website_name, website_url):
     website_url = "https://bluemercury.com"  # Replace with the target website URL
     exclude_pattern = r'/(product|products|collection|collections|staging)/'  # Regular expression to exclude URLs
     main_pages_pattern = r'/(about|faq|contact|home|pages)/'
+
+    # Scrape the homepage content directly
+    # homepage_content = scrape_page_content(website_url)
+    # scraped_data = {website_url: homepage_content} if homepage_content else {}
 
     # Scrape the homepage content directly
     homepage_content = scrape_page_content(website_url)
