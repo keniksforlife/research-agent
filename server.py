@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 from typing import Type
 from bs4 import BeautifulSoup
+from pydantic import BaseModel, Field
 import requests
 import json
 import logging

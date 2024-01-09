@@ -7,3 +7,4 @@ pyppeteer
 requests
 scikit-learn
 streamlit
+pydantic
