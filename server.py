@@ -158,7 +158,7 @@ def search_amazon(query, type):
         # Prepare the URL for ScrapingAnt API for each page
         encoded_query = quote(query)
 
-        api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2F{get_amazon_url(type)}%2Fs%3Fk%3D{encoded_query}&page={page_number}&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
+        api_url = f"https://api.scrapingant.com/v2/general?url=https%3A%2F%2F{get_amazon_url(type)}%2Fs%3Fk%3D{encoded_query}&page={page_number}&proxy_type=residential&x-api-key="+ get_scraping_agent_api_1(type) + "&proxy_country=" + get_amazon_proxy_country(type)
 
         
         try:
@@ -302,7 +302,7 @@ async def scrape_website_ant(objective: str, url: str, type):
 
         # Prepare the URL for ScrapingAnt API
         encoded_url = quote(url)
-        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&x-api-key="+ get_scraping_agent_api_2(type) + "&proxy_country=" + get_amazon_proxy_country(type)
+        api_url = f"https://api.scrapingant.com/v2/general?url={encoded_url}&proxy_type=residential&x-api-key="+ get_scraping_agent_api_2(type) + "&proxy_country=" + get_amazon_proxy_country(type)
 
         response = requests.get(api_url)
         response.raise_for_status()
