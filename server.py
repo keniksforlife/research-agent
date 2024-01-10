@@ -772,7 +772,7 @@ def get_scraping_agent_api_1(type):
     if type == "US Baby":
         return scrape_ant_key_US_baby_1
     elif type == "UK Baby":
-        return scrape_ant_key_US_baby_1
+        return scrape_ant_key_UK_baby_1
     elif type == "US Beauty":
         return scrape_ant_key_US_beauty_1
     else:
@@ -782,7 +782,7 @@ def get_scraping_agent_api_2(type):
     if type == "US Baby":
         return scrape_ant_key_US_baby_2
     elif type == "UK Baby":
-        return scrape_ant_key_US_baby_2
+        return scrape_ant_key_UK_baby_2
     elif type == "US Beauty":
         return scrape_ant_key_US_beauty_2
     else:

@@ -1,7 +1,7 @@
 [
     {
         "name": "session-id",
-        "value": "262-2266172-0591254"
+        "value": "144-6718670-2633739"
     },
     {
         "name": "session-id-time",
@@ -9,15 +9,23 @@
     },
     {
         "name": "i18n-prefs",
-        "value": "GBP"
+        "value": "USD"
     },
     {
         "name": "csm-hit",
-        "value": "tb:s-2Z6PCHQJYBW5J80ZAB7P|1704842522142&t:1704842523104&adb:adblk_no"
+        "value": "tb:s-0M3KXR6GV827NC8WSHJS|1704867042452&t:1704867043175&adb:adblk_no"
     },
     {
-        "name": "ubid-acbuk",
-        "value": "260-9068808-5046832"
+        "name": "ubid-main",
+        "value": "130-9249726-8497430"
+    },
+    {
+        "name": "session-token",
+        "value": "1S3nJl96t/JDRStRXrFT2XSTQFp/V4dWIWtmec8P0+tdOWNdHFQMMubzikGnOPfUjzf4z9gG6P1v6cnifQMJw+NHN0YS8J0+WNtSUIvq/8EKmRu11SRsEdnE4+hW2tvthZvh09KDrBal5TgDyjFXG2zXlm25IqWM2AWV35XsRlPadtLfTzzs+imdcKpSwZQ/kDKquQVmdR53ftrKcAnoHI8y60YSYNpNMXByHy2a2XTb6f6BOucuG2vh2K69MO1vEqzcx7iWJqaok4HQDoRVKgh8I21XKoDzqQbMVX+78MxLHkx1rxVtjZVD1kC0zCKTku5JhjLQM/sSic/MECq0mNq0VAEKSsbx"
+    },
+    {
+        "name": "ad-id",
+        "value": "A4MwhHfPp0EVsGZfFG2yLgU"
     },
     {
         "name": "ad-privacy",
