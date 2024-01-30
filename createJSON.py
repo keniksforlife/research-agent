@@ -112,6 +112,8 @@ def transform_product_data(input_json_file, output_json_file):
                 review_section['ThingsToConsider'] = extract_section("Points to Consider", section)
             elif "Additional Information" in section:
                 review_section['UsefulProductInfo'] = extract_section("Additional Information", section,115)
+            elif "Useful Product Information" in section:
+                review_section['UsefulProductInfo'] = extract_section("Useful Product Information", section,115)
 
                 
 
