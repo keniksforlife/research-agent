@@ -590,36 +590,37 @@ async def scrape_amazon_critical_reviews(asin, type):
 # asyncio.run(scrape_amazon_critical_reviews("B08DY55SQZ"))
 
 def format_reviews_for_airtable(reviews):
-    delimiter = " | "
-    formatted_reviews = []
+    try:
+        # Check if reviews is a list
+        if not isinstance(reviews, list):
+            # Log the error or handle the case appropriately
+            print("Error: Reviews is None or not a list.")
+            return ""  # Return an empty string or handle as needed
 
-    for review in reviews:
-        if isinstance(review, dict) and 'text' in review:
-            formatted_reviews.append(review['text'])
-        else:
-            # Log the error or send a notification
-            print(f"Invalid review format: {review}")
+        delimiter = " | "
+        formatted_reviews = []
 
-    formatted_reviews = delimiter.join(formatted_reviews)
+        for review in reviews:
+            if isinstance(review, dict) and 'text' in review:
+                formatted_reviews.append(review['text'])
+            else:
+                # Optionally log the error or handle each invalid review format
+                print(f"Warning: Invalid review format: {review}")
 
-    max_length = 10000
-    delimiter = " | "
-    formatted_reviews = []
+        # Join the reviews with the delimiter and ensure the length does not exceed max_length
+        formatted_reviews = delimiter.join(formatted_reviews)
+        max_length = 10000
 
-    for review in reviews:
-        if isinstance(review, dict) and 'text' in review:
-            formatted_reviews.append(review['text'])
-        else:
-            # Log the error or send a notification
-            print(f"Invalid review format: {review}")
+        if len(formatted_reviews) > max_length:
+            formatted_reviews = formatted_reviews[:max_length] + "..."
 
-    formatted_reviews = delimiter.join(formatted_reviews)
+        return formatted_reviews
 
-    max_length = 10000
-    if len(formatted_reviews) > max_length:
-        formatted_reviews = formatted_reviews[:max_length] + "..."
-
-    return formatted_reviews
+    except Exception as e:
+        # Log the exception or handle it as needed
+        print(f"An error occurred: {e}")
+        # Optionally, return an error message or an empty string depending on how you want to handle errors
+        return "An error occurred while formatting reviews."
 
 
 # 5. Set this as an API endpoint via FastAPI
