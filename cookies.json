@@ -1,7 +1,7 @@
 [
     {
         "name": "session-id",
-        "value": "144-6718670-2633739"
+        "value": "131-8191379-4760014"
     },
     {
         "name": "session-id-time",
@@ -9,26 +9,22 @@
     },
     {
         "name": "i18n-prefs",
-        "value": "USD"
+        "value": "CAD"
     },
     {
         "name": "csm-hit",
-        "value": "tb:s-0M3KXR6GV827NC8WSHJS|1704867042452&t:1704867043175&adb:adblk_no"
+        "value": "tb:s-ABV0SG0S6GC89CT0HQR7|1731502939364&t:1731502941197&adb:adblk_no"
     },
     {
-        "name": "ubid-main",
-        "value": "130-9249726-8497430"
-    },
-    {
-        "name": "session-token",
-        "value": "1S3nJl96t/JDRStRXrFT2XSTQFp/V4dWIWtmec8P0+tdOWNdHFQMMubzikGnOPfUjzf4z9gG6P1v6cnifQMJw+NHN0YS8J0+WNtSUIvq/8EKmRu11SRsEdnE4+hW2tvthZvh09KDrBal5TgDyjFXG2zXlm25IqWM2AWV35XsRlPadtLfTzzs+imdcKpSwZQ/kDKquQVmdR53ftrKcAnoHI8y60YSYNpNMXByHy2a2XTb6f6BOucuG2vh2K69MO1vEqzcx7iWJqaok4HQDoRVKgh8I21XKoDzqQbMVX+78MxLHkx1rxVtjZVD1kC0zCKTku5JhjLQM/sSic/MECq0mNq0VAEKSsbx"
-    },
-    {
-        "name": "ad-id",
-        "value": "A4MwhHfPp0EVsGZfFG2yLgU"
+        "name": "ubid-acbca",
+        "value": "134-7120231-1092317"
     },
     {
         "name": "ad-privacy",
         "value": "0"
+    },
+    {
+        "name": "session-token",
+        "value": "GXZOOsKO5rUpFBSmRFCKToLuyCMy4zzfn1YNxLwvbq1MRvhShZic0+O/sRL4VGvtXwOWJCvp/UorUfY1+OgaCn2M5+T0GM6vg2Rx69xbxzqIwrTgqBICdiJNZj58NoGaT7en/kGbm7YCxbqEoMONlJnSl7vO5ShzjlN/ZdRZ9k8kh93fb2YCLtvG2dybj2oIRQ1p6i85RtHtVuobbnUnuoNqxJ0An23EFzYWFHBaO+XescN7AfNgOCH2awv4jQnCTfVj6dHRQWpb+pFDpmIjm1rosVYtqXD1ch6d98PBczOXmmC0355jK3hcIj2sWVJ1NIKUi46hvdp7v8d9O5CP8cABcOvozR6R"
     }
 ]

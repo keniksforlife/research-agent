@@ -44,6 +44,8 @@ scrape_ant_key_UK_baby_1 = os.getenv("SCRAPING_ANT_KEY_b1")
 scrape_ant_key_UK_baby_2 = os.getenv("SCRAPING_ANT_KEY_b2")
 scrape_ant_key_US_beauty_1 = os.getenv("SCRAPING_ANT_KEY_c1")
 scrape_ant_key_US_beauty_2 = os.getenv("SCRAPING_ANT_KEY_c2")
+scrape_ant_key_YBC_CA = os.getenv("SCRAPING_ANT_KEY_c1")
+scrape_ant_key_YBC_CA_2 = os.getenv("SCRAPING_ANT_KEY_c2")
 
 open_ai_key = os.getenv("OPENAI_API_KEY")
 
@@ -704,7 +706,7 @@ def long_running_task(query, unique_id, type, max_attempts=3):
 
     actual_content = all_product_details
 
-    # print(actual_content)
+    print(actual_content)
     try:
         if (is_valid_json):
             save_to_airtable(remove_duplicate_json(
@@ -755,6 +757,8 @@ def get_airtable_api_id(type):
         return "appPA8CS25feRpk84"
     elif type == "US Beauty":
         return "appxmV9N7mo372EkX"
+    elif type == "YBC CA":
+        return "appkUBsGAJs1T91sk"
     else:
         raise ValueError("Invalid type specified")
     
@@ -766,6 +770,8 @@ def get_make_api_url(type):
         return "https://hook.eu1.make.com/m198nfyf5pus5ijd4svjjyjbup9n2148"
     elif type == "US Beauty":
         return "https://hook.eu1.make.com/zrkuo3gwed1duqykaohastd573u1jat6"
+    elif type == "YBC CA":
+        return "https://hook.eu1.make.com/wbsq5f9697id895dpdlje9fls7xwjf6w"
     else:
         raise ValueError("Invalid type specified")
     
@@ -776,6 +782,8 @@ def get_scraping_agent_api_1(type):
         return scrape_ant_key_UK_baby_1
     elif type == "US Beauty":
         return scrape_ant_key_US_beauty_1
+    elif type == "YBC CA":
+        return scrape_ant_key_YBC_CA
     else:
         raise ValueError("Invalid get_scraping_agent_api_1 type specified")
     
@@ -786,18 +794,24 @@ def get_scraping_agent_api_2(type):
         return scrape_ant_key_UK_baby_2
     elif type == "US Beauty":
         return scrape_ant_key_US_beauty_2
+    elif type == "YBC CA":
+        return scrape_ant_key_YBC_CA_2
     else:
         raise ValueError("Invalid get_scraping_agent_api_1 type specified")
     
 def get_amazon_url(type):
     if type == "UK Baby":
         return "www.amazon.co.uk"
+    elif type == "YBC CA":
+        return "www.amazon.ca"
     else:
         return "www.amazon.com"
     
 def get_amazon_proxy_country(type):
     if type == "UK Baby":
         return "GB"
+    if type == "YBC CA":
+        return "CA"
     else:
         return "US"
     

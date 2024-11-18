@@ -87,7 +87,15 @@ def transform_product_data(input_json_file, output_json_file):
         review_section = {}
 
         review_section['ProductTitle'] = product.get('Short Product Name', '')
-        review_section['BuyLink'] = product.get('Buy Link', '') + "?tag=wwwfanfinde08-20|Buy Now From Amazon"
+        # review_section['BuyLink'] = product.get('Buy Link', '') + "?tag=wwwfanfinde08-20|Buy Now From Amazon"
+
+        buy_link = product.get('Buy Link', '')
+    
+        # Determine which affiliate tag to use based on the domain
+        affiliate_tag = "canadabestof-20" if "amazon.ca" in buy_link.lower() else "wwwfanfinde08-20"
+        review_section['BuyLink'] = f"{buy_link}?tag={affiliate_tag}|Buy Now From Amazon"
+    
+    
         price = product.get('Price', '')
         if price != "N/A":
             try:
